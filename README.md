@@ -10,7 +10,7 @@ The React + TypeScript + Vite dashboard is an interface preview. It can create t
 
 A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests.
 
-To create a durable task:
+To create a durable task (after this reviewed feature branch has been merged into the default branch, because GitHub only enables `workflow_dispatch` for workflows present on the default branch):
 
 1. Open the repository's **Actions** tab.
 2. Select **Create durable task**.
