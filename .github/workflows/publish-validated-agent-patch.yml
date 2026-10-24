@@ -38,21 +38,18 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Validate issue identity, patch boundaries, and apply to temporary workspace
-        id: validate
+      - name: Validate proposal issue identity
+        id: validate_issue
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
           patch="incoming/proposal.patch"
           readme="incoming/README.txt"
 
           if [[ ! -s "$patch" ]]; then
-            {
-              echo "has_patch=false"
-            } >> "$GITHUB_OUTPUT"
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
             {
               echo "## AI patch publication"
               echo
@@ -81,6 +78,21 @@ jobs:
           fs.writeFileSync(process.env.RUNNER_TEMP + '/publish-issue-number.txt', String(issue.number));
           NODE
           issue_number=$(cat "$RUNNER_TEMP/publish-issue-number.txt")
+          {
+            echo "issue_number=$issue_number"
+            echo "has_patch=true"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate patch boundary and apply without GitHub token
+        if: steps.validate_issue.outputs.has_patch == 'true'
+        id: validate_patch
+        shell: bash
+        env:
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          ISSUE_NUMBER: ${{ steps.validate_issue.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+          patch="incoming/proposal.patch"
 
           metrics=$(bash scripts/validate-agent-patch.sh "$patch")
           files=$(sed -n 's/.*files=\([0-9][0-9]*\).*/\1/p' <<< "$metrics")
@@ -92,7 +104,6 @@ jobs:
           git apply "$patch"
           git diff --check
           {
-            echo "issue_number=$issue_number"
             echo "has_patch=true"
             echo "changed_files=$files"
             echo "changed_lines=$changed_lines"
@@ -100,7 +111,7 @@ jobs:
           {
             echo "## AI patch publication"
             echo
-            echo "- Source issue: #$issue_number"
+            echo "- Source issue: #$ISSUE_NUMBER"
             echo "- Source run: $SOURCE_RUN_ID"
             echo "- Allowed scope checked by scripts/validate-agent-patch.sh: source files under src/, Markdown under docs/, and README.md (tests, GitHub workflows, dependencies, and lockfiles excluded)."
             echo "- Bounds: $files files, $changed_lines changed lines."
@@ -108,13 +119,13 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit and push proposal branch
-        if: steps.validate.outputs.has_patch == 'true'
+        if: steps.validate_issue.outputs.has_patch == 'true'
         id: publish_branch
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          ISSUE_NUMBER: ${{ steps.validate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ steps.validate_issue.outputs.issue_number }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
@@ -142,12 +153,12 @@ jobs:
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request for human review
-        if: steps.validate.outputs.has_patch == 'true' && steps.publish_branch.outputs.branch != ''
+        if: steps.validate_issue.outputs.has_patch == 'true' && steps.publish_branch.outputs.branch != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          ISSUE_NUMBER: ${{ steps.validate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ steps.validate_issue.outputs.issue_number }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
           PROPOSAL_BRANCH: ${{ steps.publish_branch.outputs.branch }}
         run: |
