@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { redactSecrets } from './redact-agent-context.mjs';
 
+const googleKey = 'AIza' + 'Sy0123456789' + 'abcdefghijklmnopqrstuvwxyzABC';
+const slackToken = ['xoxb', '0123456789', 'abcdefghijklmnopqrst'].join('-');
+const gitlabToken = 'glpat' + '-' + 'abcdefghijklmnopqrstuvwxyz0123456789';
+const stripeToken = ['sk', 'live', 'abcdefghijklmnop123456'].join('_');
+
 const sample = [
   'GITHUB_TOKEN=ghp_TEST_TOKEN_01234567890123456789',
   'const API_KEY = "example-api-secret-123456789";',
@@ -9,6 +14,11 @@ const sample = [
   'const privateUrl = "https://alice:super-secret-password-123@example.invalid/path";',
   'const jwt = "eyJabcdefghijk.eyJabcdefghijk.eyJabcdefghijk";',
   'DATABASE_PASSWORD=database-password-example-12345',
+  'API_TOKEN="api-token-sample-value-123"',
+  'const googleKey = "' + googleKey + '";',
+  'const slackToken = "' + slackToken + '";',
+  'const gitlabToken = "' + gitlabToken + '";',
+  'const stripeToken = "' + stripeToken + '";',
   'const resetUrl = "https://example.invalid/?access_token=query-token-abcdef123456";',
   '-----BEGIN RSA PRIVATE KEY-----',
   'FAKE_PRIVATE_KEY_MATERIAL',
@@ -25,6 +35,11 @@ for (const secret of [
   'super-secret-password-123',
   'eyJabcdefghijk.eyJabcdefghijk.eyJabcdefghijk',
   'database-password-example-12345',
+  'api-token-sample-value-123',
+  googleKey,
+  slackToken,
+  gitlabToken,
+  stripeToken,
   'query-token-abcdef123456',
   'FAKE_PRIVATE_KEY_MATERIAL',
 ]) {
