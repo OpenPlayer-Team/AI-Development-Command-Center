@@ -6,6 +6,8 @@ A GitHub-first software-development command center designed around a strict **â‚
 
 The React + TypeScript + Vite dashboard is an interface preview. It can create tasks in the current browser session, but those entries are not durable and do not execute code. The repository also includes GitHub Actions CI and a Pages deployment workflow.
 
+The sidebar now opens dedicated views for the task queue, agent workspace, GitHub activity, pull requests, workflow runs, terminal-log guidance, and settings. The queue/PR/workflow panels use public read-only GitHub metadata. The sample task rows and quick composer on Overview remain session-only demo data.
+
 ### Phase 2: durable GitHub task intake
 
 A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests.
@@ -48,7 +50,7 @@ It requires the same dedicated isolated Linux runner, local Ollama model, and `O
 
 See [local patch proposal setup and safety limits](docs/LOCAL-AGENT-PATCH-PROPOSAL.md).
 
-### Phase 6: live GitHub status (anonymous, read-only)
+### Live GitHub status (anonymous, read-only)
 
 The dashboard reads the repository's public metadata, open pull requests, open issues labelled `agent-task`, and the latest Actions runs directly from the GitHub REST API. It needs no token and performs only GET requests. Use the refresh control in the GitHub repository panel to request updated data. If the repository becomes private or anonymous API access is rate-limited, the panel shows an error instead of asking for credentials.
 
