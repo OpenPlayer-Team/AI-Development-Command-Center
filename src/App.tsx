@@ -232,6 +232,18 @@ function App() {
                           ))}
                       </div>
                       <div className="github-live-group">
+                        <div className="github-live-subheading"><span>Open agent tasks</span><span>{githubStatus.openAgentTasks.length}</span></div>
+                        {githubStatus.openAgentTasks.length === 0
+                          ? <p className="github-live-muted">No open issues labelled agent-task.</p>
+                          : githubStatus.openAgentTasks.map((issue) => (
+                            <a className="github-live-row" href={issue.htmlUrl} key={issue.number} target="_blank" rel="noreferrer">
+                              <ListTodo size={13} />
+                              <span className="github-live-row-copy"><strong>#{issue.number} {issue.title}</strong><small>{issue.labels.filter((label) => label !== 'agent-task').join(' · ') || 'agent-task'}</small></span>
+                              <ArrowUpRight size={12} />
+                            </a>
+                          ))}
+                      </div>
+                      <div className="github-live-group">
                         <div className="github-live-subheading"><span>Recent workflows</span><span>{githubStatus.recentWorkflowRuns.length}</span></div>
                         {githubStatus.recentWorkflowRuns.length === 0
                           ? <p className="github-live-muted">No workflow runs found.</p>
