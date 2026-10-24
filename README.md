@@ -50,7 +50,7 @@ See [local patch proposal setup and safety limits](docs/LOCAL-AGENT-PATCH-PROPOS
 
 ### Phase 6: live GitHub status (anonymous, read-only)
 
-The dashboard reads the repository's public metadata, open pull requests, and the latest Actions runs directly from the GitHub REST API. It needs no token and performs only GET requests. Use the refresh control in the GitHub repository panel to request updated data. If the repository becomes private or anonymous API access is rate-limited, the panel shows an error instead of asking for credentials.
+The dashboard reads the repository's public metadata, open pull requests, open issues labelled `agent-task`, and the latest Actions runs directly from the GitHub REST API. It needs no token and performs only GET requests. Use the refresh control in the GitHub repository panel to request updated data. If the repository becomes private or anonymous API access is rate-limited, the panel shows an error instead of asking for credentials.
 
 Task composer entries and the illustrative task rows are still demo-only. The dashboard does not create GitHub issues, trigger workflows, change branches, or write to GitHub from the browser. Use the durable task intake workflow to create actual GitHub Issues.
 
