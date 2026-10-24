@@ -75,7 +75,7 @@ Security goals:
 | Artifact substitution or wrong run | Publisher restricts triggering workflow, event, branch, repository, issue identity, and patch shape. | GitHub Actions/artifact supply-chain risk remains; pin third-party actions to reviewed full commit SHAs for stronger hardening. |
 | Overprivileged publication token | Separate publisher workflow; scoped repository permissions; no merge permission is requested. | The publisher can write repository contents and open PRs while running. Review workflow changes and enforce repository rulesets. |
 | False confidence from green CI | Workflow summaries document bounds and require human review; no automatic merge. | A green result is not a security verdict. Review diff, tests, dependencies, and workflow source. |
-| Dependency supply-chain compromise | Lockfile committed; CI/Pages use `npm ci`; generated-patch tests use `npm ci --ignore-scripts`; CI runs dependency audit diagnostically. | A lockfile constrains resolved versions but does not remove upstream package or action supply-chain risk; review audit output and action versions. |
+| Dependency supply-chain compromise | Lockfile committed; CI/Pages use `npm ci`; generated-patch tests use `npm ci --ignore-scripts`; CI blocks high/critical npm audit findings and reports lower-severity findings. | A lockfile constrains resolved versions but does not remove upstream package or action supply-chain risk; review all audit output and action versions. |
 
 ## Required operating procedure
 

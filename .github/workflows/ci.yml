@@ -29,16 +29,24 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
-      - name: Audit dependencies (diagnostic)
+      - name: Audit dependencies (fail on high/critical)
         shell: bash
         env:
           AUDIT_REPORT: ${{ runner.temp }}/npm-audit-report.json
         run: |
-          npm audit --json > "$AUDIT_REPORT" || true
+          set +e
+          npm audit --audit-level=high --json > "$AUDIT_REPORT"
+          audit_exit=$?
+          set -e
+          export AUDIT_EXIT="$audit_exit"
           node --input-type=commonjs <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync(process.env.AUDIT_REPORT, 'utf8'));
-          const counts = report.metadata?.vulnerabilities ?? {};
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) {
+            console.error('npm audit did not return dependency vulnerability metadata.');
+            process.exit(2);
+          }
           console.log('npm audit severity totals:', JSON.stringify(counts));
           for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
             console.log(JSON.stringify({
@@ -49,6 +57,14 @@ jobs:
               fixAvailable: item.fixAvailable,
               via: item.via.map(v => typeof v === 'string' ? v : ({ name: v.name, title: v.title, range: v.range, url: v.url }))
             }));
+          }
+          if ((counts.high ?? 0) > 0 || (counts.critical ?? 0) > 0) {
+            console.error('npm audit policy failed: high/critical vulnerabilities are not allowed in CI.');
+            process.exit(1);
+          }
+          if (process.env.AUDIT_EXIT !== '0') {
+            console.error('npm audit did not complete successfully; failing closed.');
+            process.exit(2);
           }
           NODE
       - name: Lint GitHub Actions workflow files
