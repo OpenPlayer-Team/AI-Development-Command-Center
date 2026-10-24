@@ -87,6 +87,12 @@ jobs:
             [[ "$added" =~ ^[0-9]+$ && "$deleted" =~ ^[0-9]+$ ]] || {
               echo "::error::Binary or unparseable file changes are not allowed."; exit 1;
             }
+            case "/$path/" in
+              *"/../"*|*"//"*)
+                echo "::error::Traversal or repeated separators are not allowed: $path"
+                exit 1
+                ;;
+            esac
             case "$path" in
               src/*)
                 case "$path" in
