@@ -25,9 +25,12 @@
 - [x] Document dedicated runner requirements and the security boundary
 - [ ] Run the local planning workflow end-to-end on a dedicated isolated runner
 - [ ] Define and review a threat model and allowed tool/command policy
-- [ ] Implement isolated code-editing execution only after security review
+- [x] Add bounded patch generation and test/build validation in an ephemeral GitHub-hosted runner (workflow still requires an operational self-hosted Ollama runner)
+- [x] Add a publisher workflow that opens a restricted-scope PR only after successful validation; it never merges
+- [ ] Run the local proposal → validation → PR path end-to-end on a dedicated isolated runner
+- [ ] Define and review a threat model and allowed tool/command policy
 - [ ] Keep untrusted task/repository content isolated from secrets
-- [ ] Require explicit human approval before creating or applying code changes
+- [ ] Require explicit human review and approval before merging any agent PR
 
 ## Phase 4 — Provider routing and local fallback
 - [ ] Implement provider interface and health checks
