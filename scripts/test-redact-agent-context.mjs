@@ -8,6 +8,8 @@ const sample = [
   'Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123456789',
   'const privateUrl = "https://alice:super-secret-password-123@example.invalid/path";',
   'const jwt = "eyJabcdefghijk.eyJabcdefghijk.eyJabcdefghijk";',
+  'DATABASE_PASSWORD=database-password-example-12345',
+  'const resetUrl = "https://example.invalid/?access_token=query-token-abcdef123456";',
   '-----BEGIN RSA PRIVATE KEY-----',
   'FAKE_PRIVATE_KEY_MATERIAL',
   '-----END RSA PRIVATE KEY-----',
@@ -22,6 +24,8 @@ for (const secret of [
   'abcdefghijklmnopqrstuvwxyz0123456789',
   'super-secret-password-123',
   'eyJabcdefghijk.eyJabcdefghijk.eyJabcdefghijk',
+  'database-password-example-12345',
+  'query-token-abcdef123456',
   'FAKE_PRIVATE_KEY_MATERIAL',
 ]) {
   assert.equal(redacted.includes(secret), false, 'secret leaked into redacted output: ' + secret);
