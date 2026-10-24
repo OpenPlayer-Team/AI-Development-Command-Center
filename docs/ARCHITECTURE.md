@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-The current branch contains a React + TypeScript + Vite static dashboard. Task creation and search use browser-only demo state; initial task rows are illustrative and are not proof of AI work. A read-only client now fetches public repository metadata, open pull requests, and recent Actions runs from the unauthenticated GitHub REST API. It uses GET requests only, stores no access token, and cannot read private-repository data.
+The current branch contains a React + TypeScript + Vite static dashboard. Task creation and search use browser-only demo state; initial task rows are illustrative and are not proof of AI work. A read-only client now fetches public repository metadata, open pull requests, open issues labelled `agent-task`, and recent Actions runs from the unauthenticated GitHub REST API. It uses GET requests only, stores no access token, and cannot read private-repository data.
 
 ## Target architecture
 
@@ -30,7 +30,7 @@ A prior CI dependency audit reported 6 findings before the Vite/Vitest upgrade (
 
 ## Current limitations
 
-- The dashboard's local composer is demo-only; durable tasks are created through the manual task-intake workflow and stored as GitHub Issues. The live dashboard reader is anonymous and read-only; a private repository or API rate limit results in an explicit error rather than requesting a token.
+- The dashboard's local composer is demo-only; durable tasks are created through the manual task-intake workflow and stored as GitHub Issues. The dashboard can display public issues labelled `agent-task`, open PRs, and recent workflow runs. The live reader is anonymous and read-only; a private repository or API rate limit results in an explicit error rather than requesting a token.
 - The local Ollama workflow generates a planning artifact only. It does not edit code, execute tests, create a branch, or open a PR.
 - The local planning workflow requires a configured self-hosted runner labelled `ai-agent`, Ollama, and the repository variable `OLLAMA_MODEL`. It has not been end-to-end verified until a real run is inspected.
 - GitHub Actions workflow dispatch generally requires the workflow to be present on the default branch. Keep the feature PR open until the user explicitly approves merging.
