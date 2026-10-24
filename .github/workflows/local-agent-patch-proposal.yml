@@ -191,7 +191,10 @@ jobs:
             "$RUNNER_TEMP/agent-source-context.txt" \
             "$RUNNER_TEMP/agent-patch-proposal/prompt.txt" \
             "$RUNNER_TEMP/agent-patch-proposal/proposal.raw" \
-            "$RUNNER_TEMP/agent-patch-proposal/proposal.redacted"
+            "$RUNNER_TEMP/agent-patch-proposal/proposal.redacted" \
+            "$RUNNER_TEMP/agent-patch-proposal/proposal.patch" \
+            "$RUNNER_TEMP/agent-patch-proposal/README.txt"
+          rmdir "$RUNNER_TEMP/agent-patch-proposal" 2>/dev/null || true
 
 
   validate-proposal:

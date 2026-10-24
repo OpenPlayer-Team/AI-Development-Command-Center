@@ -151,4 +151,6 @@ jobs:
           rm -f "$RUNNER_TEMP/agent-issue.json" \
             "$RUNNER_TEMP/agent-task-title.txt" "$RUNNER_TEMP/agent-task-body.txt" \
             "$RUNNER_TEMP/agent-task-title.txt.redacted" "$RUNNER_TEMP/agent-task-body.txt.redacted" \
-            "$RUNNER_TEMP/agent-plan/prompt.txt" "$RUNNER_TEMP/agent-plan/plan.raw.md"
+            "$RUNNER_TEMP/agent-plan/prompt.txt" "$RUNNER_TEMP/agent-plan/plan.raw.md" \
+            "$RUNNER_TEMP/agent-plan/plan.md"
+          rmdir "$RUNNER_TEMP/agent-plan" 2>/dev/null || true
