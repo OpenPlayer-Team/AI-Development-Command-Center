@@ -14,7 +14,7 @@
 - [x] Add a manual workflow-dispatch task intake with input validation
 - [x] Apply `agent-task` and priority labels; include submitter/source commit
 - [x] Limit workflow token permissions to contents:read and issues:write
-- [ ] Add issue-to-dashboard synchronization (requires secure GitHub data access)
+- [x] Add anonymous read-only sync for public `agent-task` issues, open pull requests, and recent Actions runs (private repositories need future secure authentication)
 - [x] Add live read-only dashboard status for public repository metadata, open pull requests, and recent Actions runs
 - [ ] Add a review screen that links to real issues and pull requests
 - [ ] Validate the intake workflow by creating a test issue, then close/delete it as appropriate
