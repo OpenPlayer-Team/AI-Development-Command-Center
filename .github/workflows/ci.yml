@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Audit dependencies (diagnostic)
+        shell: bash
+        run: |
+          npm audit --json > npm-audit-report.json || true
+          node --input-type=commonjs <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('npm-audit-report.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities ?? {};
+          console.log('npm audit severity totals:', JSON.stringify(counts));
+          for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
+            console.log(JSON.stringify({
+              package: name,
+              severity: item.severity,
+              direct: item.isDirect,
+              range: item.range,
+              fixAvailable: item.fixAvailable,
+              via: item.via.map(v => typeof v === 'string' ? v : ({ name: v.name, title: v.title, range: v.range, url: v.url }))
+            }));
+          }
+          NODE
+      - name: Run tests
+        run: npm test
+      - name: Build production bundle
+        run: npm run build
