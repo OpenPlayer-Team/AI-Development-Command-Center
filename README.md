@@ -8,7 +8,7 @@ The React + TypeScript + Vite dashboard is an interface preview. It can create t
 
 ### Phase 2: durable GitHub task intake
 
-A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests.
+A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests. A separate **Agent runner preflight** workflow can validate an existing open task Issue and its labels, but it deliberately stops before execution because no provider or isolated code runner is configured.
 
 To create a durable task (after this reviewed feature branch has been merged into the default branch, because GitHub only enables `workflow_dispatch` for workflows present on the default branch):
 
@@ -21,6 +21,10 @@ To create a durable task (after this reviewed feature branch has been merged int
 If the workflow is not listed or cannot create an issue, check repository Actions permissions and the workflow run log. The workflow uses the built-in `GITHUB_TOKEN` with `issues: write`; no personal access token or paid service is required.
 
 **Security boundary:** task text is untrusted input. It is stored as issue content only. This workflow does not interpret it as shell commands.
+
+### Validate a task before execution
+
+After the reviewed branch has been merged to the default branch, open **Actions → Agent runner preflight → Run workflow** and provide the number of an open Issue carrying the `agent-task` label. The workflow has read-only permissions, validates bounded input, and publishes a preflight summary. A successful preflight is **not** evidence that an AI agent executed the task; it does not check out source code, access secrets, create a branch, or open a pull request.
 
 ## Local development
 
