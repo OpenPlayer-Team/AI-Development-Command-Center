@@ -1,0 +1,80 @@
+name: Agent runner preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Existing agent-task GitHub Issue number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: agent-preflight-${{ github.repository }}-${{ inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  validate-task:
+    name: Validate task before any execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Validate issue record
+        id: validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::Issue number must be a positive integer."
+            exit 1
+          fi
+
+          gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json number,title,body,state,labels,url > issue.json
+          node --input-type=commonjs <<'NODE'
+          const fs = require('node:fs');
+          const issue = JSON.parse(fs.readFileSync('issue.json', 'utf8'));
+          const labels = (issue.labels ?? []).map(label => label.name);
+          const title = (issue.title ?? '').trim();
+          const body = (issue.body ?? '').trim();
+          const problems = [];
+          if (issue.state !== 'OPEN') problems.push('Issue must be open.');
+          if (!labels.includes('agent-task')) problems.push('Issue must have the agent-task label.');
+          if (!title) problems.push('Issue title is empty.');
+          if (title.length > 200) problems.push('Issue title exceeds 200 characters.');
+          if (!body) problems.push('Issue body is empty.');
+          if (body.length > 12000) problems.push('Issue body exceeds 12000 characters.');
+          if (problems.length) {
+            for (const problem of problems) console.error('::error::' + problem);
+            process.exit(1);
+          }
+          console.log('Validated issue #' + issue.number + ': ' + title);
+          console.log('Issue URL: ' + issue.url);
+          console.log('Task text is untrusted data and will not be executed as shell commands.');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'issue_url=' + issue.url + '\n');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'issue_title=' + title.replace(/[\r\n]/g, ' ') + '\n');
+          NODE
+
+      - name: Publish safe preflight result
+        env:
+          ISSUE_URL: ${{ steps.validate.outputs.issue_url }}
+          ISSUE_TITLE: ${{ steps.validate.outputs.issue_title }}
+        shell: bash
+        run: |
+          {
+            echo "## Agent preflight completed"
+            echo
+            echo "- **Task:** $ISSUE_TITLE"
+            echo "- **Issue:** $ISSUE_URL"
+            echo "- **Validation:** passed"
+            echo "- **Execution:** not started"
+            echo
+            echo "This repository has no configured AI provider or isolated code-execution runner yet. No source code was checked out or executed, no secrets were accessed, and no pull request was created."
+            echo
+            echo "Next gate: configure and threat-model a bounded runner before enabling code changes."
+          } >> "$GITHUB_STEP_SUMMARY"
