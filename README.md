@@ -48,6 +48,14 @@ It requires the same dedicated isolated Linux runner, local Ollama model, and `O
 
 See [local patch proposal setup and safety limits](docs/LOCAL-AGENT-PATCH-PROPOSAL.md).
 
+### Phase 5: publish a validated proposal as a pull request
+
+The `.github/workflows/publish-validated-agent-patch.yml` workflow listens for a successful **Local AI patch proposal** run on the repository's default branch. When the patch exists and the isolated tests/build succeeded, it creates a separate `ai/issue-N-run-ID` branch and opens a pull request for review.
+
+The publisher accepts changes only under `src/`, `docs/`, or `README.md`; it rejects test files, workflow files, dependency manifests, lockfiles, binary patches, path traversal, and oversized diffs. It never merges. The generated PR and its CI results must still be reviewed manually.
+
+Before enabling this after merge, go to **Settings → Actions → General** and allow GitHub Actions to create pull requests. The publisher has not been end-to-end tested with the local Ollama runner, so it is an implementation awaiting first operational verification—not a claim of autonomous completion.
+
 ## Local development
 
 Requires Node.js 20 or newer.
@@ -77,6 +85,6 @@ Expected project-site URL, available only after Pages is enabled and a deploymen
 - No API keys belong in frontend code.
 - No automatic pull-request merge is enabled.
 - A GitHub Issue is a durable queue record, not proof that an agent has run the task.
-- Autonomous code editing is not enabled yet; it requires a separate isolated execution design and explicit human review.
+- The optional patch workflow can propose a limited code change and open a PR after validation; it cannot merge, and a human must review it.
 
 See [architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md) for constraints and next steps.
