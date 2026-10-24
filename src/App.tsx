@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
-  Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bot, Boxes, Check,
+  Activity, ArrowRight, ArrowUpRight, Bot, Boxes, Check,
   ChevronDown, CircleHelp, Clock3, Code2, Command, Cpu, GitBranch, GitPullRequest,
   LayoutDashboard, ListTodo, MessageSquare, MoreHorizontal, Plus, Search, Send,
   Settings2, ShieldCheck, Sparkles, Terminal, Workflow, Zap,
@@ -199,7 +199,7 @@ function App() {
   );
 }
 
-function MetricCard({ label, value, caption, icon, tone, trend }: { label: string; value: string; caption: string; icon: React.ReactNode; tone: string; trend: string }) {
+function MetricCard({ label, value, caption, icon, tone, trend }: { label: string; value: string; caption: string; icon: ReactNode; tone: string; trend: string }) {
   return <div className="metric-card"><div className="metric-top"><span>{label}</span><span className={`metric-icon tone-${tone}`}>{icon}</span></div><div className="metric-value">{value}</div><div className="metric-bottom"><span>{caption}</span><span className="metric-trend">{trend}</span></div></div>;
 }
 
