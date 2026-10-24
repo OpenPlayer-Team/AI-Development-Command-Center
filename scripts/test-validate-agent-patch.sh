@@ -13,6 +13,7 @@ git -C "$fixture" config user.name "Patch policy test"
 git -C "$fixture" config user.email "patch-policy-test@example.invalid"
 printf 'export const app = "base";\n' > "$fixture/src/App.tsx"
 printf 'export const appTest = "base";\n' > "$fixture/src/App.test.tsx"
+printf '{"featureFlag":false}\n' > "$fixture/src/settings.json"
 printf '# Docs\n' > "$fixture/docs/README.md"
 printf '# Project\n' > "$fixture/README.md"
 printf 'name: CI\n' > "$fixture/.github/workflows/ci.yml"
@@ -47,6 +48,9 @@ expect_reject "GitHub workflow modification" "$tmp/github-workflow.patch"
 
 make_patch test-file src/App.test.tsx
 expect_reject "test-file modification" "$tmp/test-file.patch"
+
+make_patch source-json src/settings.json
+expect_reject "source configuration JSON modification" "$tmp/source-json.patch"
 
 make_patch package-manifest package.json
 expect_reject "dependency manifest modification" "$tmp/package-manifest.patch"
