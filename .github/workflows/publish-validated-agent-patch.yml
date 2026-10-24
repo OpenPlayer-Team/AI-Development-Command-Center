@@ -5,22 +5,26 @@ on:
     workflows: ["Local AI patch proposal"]
     types: [completed]
 
-# A successful proposal run may produce a reviewed PR, never an automatic merge.
-permissions:
-  actions: read
-  contents: write
-  issues: read
-  pull-requests: write
+# Elevated write permissions are isolated to the final publication job.
+permissions: {}
 
 concurrency:
   group: publish-ai-patch-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  validate:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.path == '.github/workflows/local-agent-patch-proposal.yml' && github.event.workflow_run.head_branch == github.event.repository.default_branch && github.event.workflow_run.head_repository.full_name == github.repository }}
+    name: Validate proposal with read-only permissions
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+    outputs:
+      has_patch: ${{ steps.validate_issue.outputs.has_patch }}
+      issue_number: ${{ steps.validate_issue.outputs.issue_number }}
     steps:
       - name: Download artifact from the successful proposal run
         uses: actions/download-artifact@v8
@@ -31,7 +35,7 @@ jobs:
           merge-multiple: true
           path: incoming
 
-      - name: Check out the exact source commit without persistent credentials
+      - name: Check out exact source commit with read-only credentials
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -66,24 +70,26 @@ jobs:
           }
           issue_number="${BASH_REMATCH[1]}"
 
-          gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json number,state,labels,url > "$RUNNER_TEMP/publish-issue.json"
-          node <<'NODE'
+          issue_file="$RUNNER_TEMP/publish-issue.json"
+          trap 'rm -f "$issue_file"' EXIT
+          gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json number,state,labels,url > "$issue_file"
+          node - "$issue_file" "$issue_number" <<'NODE'
           const fs = require('node:fs');
-          const issue = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/publish-issue.json', 'utf8'));
+          const [path, expectedNumber] = process.argv.slice(2);
+          const issue = JSON.parse(fs.readFileSync(path, 'utf8'));
           const labels = (issue.labels ?? []).map(label => label.name);
+          if (String(issue.number) !== expectedNumber) throw new Error('Task issue number does not match the artifact.');
           if (issue.state !== 'OPEN') throw new Error('Task issue must still be open.');
           if (!labels.includes('agent-task')) throw new Error('Task issue must retain the agent-task label.');
-          const expected = 'https://github.com/' + process.env.GITHUB_REPOSITORY + '/issues/' + issue.number;
-          if (issue.url !== expected) throw new Error('Task issue URL does not match repository and issue number.');
-          fs.writeFileSync(process.env.RUNNER_TEMP + '/publish-issue-number.txt', String(issue.number));
+          const expectedUrl = 'https://github.com/' + process.env.GITHUB_REPOSITORY + '/issues/' + expectedNumber;
+          if (issue.url !== expectedUrl) throw new Error('Task issue URL does not match repository and issue number.');
           NODE
-          issue_number=$(cat "$RUNNER_TEMP/publish-issue-number.txt")
           {
             echo "issue_number=$issue_number"
             echo "has_patch=true"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Validate patch boundary and apply without GitHub token
+      - name: Validate patch boundary and apply without a GitHub token
         if: steps.validate_issue.outputs.has_patch == 'true'
         id: validate_patch
         shell: bash
@@ -93,6 +99,14 @@ jobs:
         run: |
           set -euo pipefail
           patch="incoming/proposal.patch"
+          redacted="$RUNNER_TEMP/proposal-redacted.patch"
+          trap 'rm -f "$redacted"' EXIT
+
+          node scripts/redact-agent-context.mjs "$patch" > "$redacted"
+          if ! cmp -s "$patch" "$redacted"; then
+            echo "::error::Proposal contains secret-like material; refusing publication."
+            exit 1
+          fi
 
           metrics=$(bash scripts/validate-agent-patch.sh "$patch")
           files=$(sed -n 's/.*files=\([0-9][0-9]*\).*/\1/p' <<< "$metrics")
@@ -104,7 +118,118 @@ jobs:
           git apply "$patch"
           git diff --check
           {
-            echo "has_patch=true"
+            echo "changed_files=$files"
+            echo "changed_lines=$changed_lines"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## AI patch validation"
+            echo
+            echo "- Source issue: #$ISSUE_NUMBER"
+            echo "- Source run: $SOURCE_RUN_ID"
+            echo "- Allowed scope: src/, Markdown under docs/, and README.md."
+            echo "- Bounds: $files files, $changed_lines changed lines."
+            echo "- Secret-like output and invalid paths are rejected."
+            echo "- Patch applied only in this read-only temporary workspace."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload validated patch for the publisher job
+        if: steps.validate_issue.outputs.has_patch == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: validated-agent-patch-${{ github.event.workflow_run.id }}
+          path: incoming/proposal.patch
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: validate
+    if: ${{ needs.validate.outputs.has_patch == 'true' }}
+    name: Publish restricted proposal branch and PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      actions: read
+      contents: write
+      issues: read
+      pull-requests: write
+    steps:
+      - name: Download patch checked by the read-only job
+        uses: actions/download-artifact@v8
+        with:
+          name: validated-agent-patch-${{ github.event.workflow_run.id }}
+          path: incoming
+
+      - name: Fetch exact public source commit without a GitHub token
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          source_dir="$RUNNER_TEMP/publish-source"
+          rm -rf "$source_dir"
+          git clone --no-checkout --depth=1 --branch "$DEFAULT_BRANCH" \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "$source_dir"
+          git -C "$source_dir" fetch --no-tags --depth=1 origin "$SOURCE_SHA"
+          git -C "$source_dir" checkout --detach "$SOURCE_SHA"
+          [[ "$(git -C "$source_dir" rev-parse HEAD)" == "$SOURCE_SHA" ]] || {
+            echo "::error::Could not verify exact source commit."
+            exit 1
+          }
+
+      - name: Confirm task is still open and eligible
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+          [[ "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo "::error::Invalid validated issue number."; exit 1; }
+          issue_file="$RUNNER_TEMP/publish-issue.json"
+          trap 'rm -f "$issue_file"' EXIT
+          gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json number,state,labels,url > "$issue_file"
+          node - "$issue_file" "$ISSUE_NUMBER" <<'NODE'
+          const fs = require('node:fs');
+          const [path, expectedNumber] = process.argv.slice(2);
+          const issue = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const labels = (issue.labels ?? []).map(label => label.name);
+          if (String(issue.number) !== expectedNumber) throw new Error('Task issue number does not match validation.');
+          if (issue.state !== 'OPEN') throw new Error('Task issue was closed before publication.');
+          if (!labels.includes('agent-task')) throw new Error('Task issue no longer has the agent-task label.');
+          const expectedUrl = 'https://github.com/' + process.env.GITHUB_REPOSITORY + '/issues/' + expectedNumber;
+          if (issue.url !== expectedUrl) throw new Error('Task issue URL does not match repository.');
+          NODE
+
+      - name: Revalidate and apply patch without a GitHub token
+        id: apply_patch
+        shell: bash
+        working-directory: ${{ runner.temp }}/publish-source
+        env:
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue_number }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          patch="$GITHUB_WORKSPACE/incoming/proposal.patch"
+          [[ -s "$patch" ]] || { echo "::error::Validated patch artifact is missing."; exit 1; }
+
+          redacted="$RUNNER_TEMP/proposal-redacted.patch"
+          trap 'rm -f "$redacted"' EXIT
+          node scripts/redact-agent-context.mjs "$patch" > "$redacted"
+          if ! cmp -s "$patch" "$redacted"; then
+            echo "::error::Patch contains secret-like material; refusing publication."
+            exit 1
+          fi
+
+          metrics=$(bash scripts/validate-agent-patch.sh "$patch")
+          files=$(sed -n 's/.*files=\([0-9][0-9]*\).*/\1/p' <<< "$metrics")
+          changed_lines=$(sed -n 's/.*changed_lines=\([0-9][0-9]*\).*/\1/p' <<< "$metrics")
+          [[ -n "$files" && -n "$changed_lines" ]] || {
+            echo "::error::Patch validator did not return valid metrics."
+            exit 1
+          }
+          git apply "$patch"
+          git diff --check
+          {
             echo "changed_files=$files"
             echo "changed_lines=$changed_lines"
           } >> "$GITHUB_OUTPUT"
@@ -113,19 +238,19 @@ jobs:
             echo
             echo "- Source issue: #$ISSUE_NUMBER"
             echo "- Source run: $SOURCE_RUN_ID"
-            echo "- Allowed scope checked by scripts/validate-agent-patch.sh: source files under src/, Markdown under docs/, and README.md (tests, GitHub workflows, dependencies, and lockfiles excluded)."
             echo "- Bounds: $files files, $changed_lines changed lines."
-            echo "- Patch applied only to a temporary hosted workspace; review is still required."
+            echo "- No generated project code was executed in this write-permission job."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit and push proposal branch
-        if: steps.validate_issue.outputs.has_patch == 'true'
+        if: steps.apply_patch.outcome == 'success'
         id: publish_branch
         shell: bash
+        working-directory: ${{ runner.temp }}/publish-source
         env:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          ISSUE_NUMBER: ${{ steps.validate_issue.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue_number }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
@@ -146,19 +271,20 @@ jobs:
           git diff --cached --check
           git diff --cached --quiet && { echo "::error::Validated patch produced no tracked changes."; exit 1; }
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+users.noreply.github.com"
           git commit -m "ai: validated proposal for issue #$ISSUE_NUMBER"
           auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
           git -c http.extraheader="$auth_header" push origin "$branch"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request for human review
-        if: steps.validate_issue.outputs.has_patch == 'true' && steps.publish_branch.outputs.branch != ''
+        if: steps.publish_branch.outputs.branch != ''
         shell: bash
+        working-directory: ${{ runner.temp }}/publish-source
         env:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          ISSUE_NUMBER: ${{ steps.validate_issue.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.validate.outputs.issue_number }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
           PROPOSAL_BRANCH: ${{ steps.publish_branch.outputs.branch }}
         run: |
@@ -172,8 +298,8 @@ jobs:
 
           - Source task: https://github.com/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER
           - Proposal and isolated test run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID
-          - This branch was generated from a local Ollama proposal and passed the workflow's configured test/build steps before publication.
-          - The publisher restricts changes to src/, docs/, and README.md; project tests, GitHub workflows, dependency manifests, and lockfiles are excluded.
+          - The patch was generated by local Ollama and passed the configured test/build job before publication.
+          - Changes are limited to src/, Markdown under docs/, and README.md; tests, workflows, dependency manifests, and lockfiles are excluded.
           - A passing test/build does not guarantee correctness or security. Review all changes and CI results.
 
           **Human review required. This workflow never merges the pull request.**"
