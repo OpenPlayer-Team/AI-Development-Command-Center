@@ -222,3 +222,5 @@ h1 span{background:linear-gradient(90deg,#b4a0ff,#76dbe6);-webkit-background-cli
 .github-live-error{padding:8px;border:1px solid #573541;background:#27191f;color:#ffb6c2;border-radius:6px}
 .github-live-updated{margin:10px 0 0;font-size:9px;color:#687187}
 @media(max-width:760px){.github-live-section{padding:10px}.github-live-row-copy strong{font-size:10px}}
+
+.github-live-warning{font-size:10px;line-height:1.5;margin:8px 0;color:#e8c27a;overflow-wrap:anywhere}
