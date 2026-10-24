@@ -106,6 +106,10 @@ jobs:
             printf '%s\n' '> This issue is a durable task record. It does not automatically execute code or authorize merging.'
           } > "$body_file"
           issue_url="$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$TASK_TITLE" --body-file "$body_file" --label agent-task --label "priority:$TASK_PRIORITY")"
+          if [[ ! "$issue_url" =~ ^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$ ]]; then
+            echo "::error::GitHub CLI did not return a valid issue URL."
+            exit 1
+          fi
           echo "issue_url=$issue_url" >> "$GITHUB_OUTPUT"
           echo "Created durable task: $issue_url"
 
