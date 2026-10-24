@@ -1,11 +1,12 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
   Activity, ArrowRight, ArrowUpRight, Bot, Boxes, Check,
   ChevronDown, CircleHelp, Clock3, Code2, Command, Cpu, GitBranch, GitPullRequest,
   LayoutDashboard, ListTodo, MessageSquare, MoreHorizontal, Plus, Search, Send,
-  Settings2, ShieldCheck, Sparkles, Terminal, Workflow, Zap,
+  RefreshCw, Settings2, ShieldCheck, Sparkles, Terminal, Workflow, Zap,
 } from 'lucide-react';
 import { countTasksByStatus, createTask, type Task } from './task-utils';
+import { fetchGitHubStatus, type GitHubLiveStatus } from './github-status';
 
 const initialTasks: Task[] = [
   { id: 'task-104', title: 'Audit repository structure and dependencies', project: 'Command Center', status: 'done', priority: 'high', agent: 'Repository Analyst', updated: '12 min ago' },
@@ -17,14 +18,49 @@ const initialTasks: Task[] = [
 
 const statusLabels = { queued: 'Queued', running: 'In progress', review: 'Needs review', done: 'Completed' } as const;
 
+function formatTimestamp(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+}
+
+function workflowRunLabel(status: string, conclusion: string | null): string {
+  if (status !== 'completed') return status.replaceAll('_', ' ');
+  return conclusion ? conclusion.replaceAll('_', ' ') : 'completed';
+}
+
 function App() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [taskInput, setTaskInput] = useState('');
   const [search, setSearch] = useState('');
   const [activeNav, setActiveNav] = useState('Overview');
   const [showComposer, setShowComposer] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<GitHubLiveStatus | null>(null);
+  const [githubStatusError, setGithubStatusError] = useState<string | null>(null);
+  const [githubStatusLoading, setGithubStatusLoading] = useState(true);
+  const [githubRefreshNonce, setGithubRefreshNonce] = useState(0);
   const counts = useMemo(() => countTasksByStatus(tasks), [tasks]);
   const filteredTasks = tasks.filter((task) => task.title.toLowerCase().includes(search.toLowerCase()));
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setGithubStatusLoading(true);
+    setGithubStatusError(null);
+
+    fetchGitHubStatus(controller.signal)
+      .then((status) => setGithubStatus(status))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setGithubStatusError(error instanceof Error ? error.message : 'Unable to load GitHub status.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setGithubStatusLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [githubRefreshNonce]);
 
   function submitTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -168,11 +204,50 @@ function App() {
                 <div className="panel-heading compact"><div><div className="section-title">GitHub repository</div><p>Repository-first workflow</p></div><GitBranch size={17} className="muted-icon" /></div>
                 <div className="repo-card">
                   <div className="repo-icon"><Boxes size={17} /></div>
-                  <div className="repo-details"><strong>AI-Development-Command-Center</strong><span><span className="repo-dot" /> Public repository</span></div>
-                  <span className="repo-visibility">PUBLIC</span>
+                  <div className="repo-details"><strong>AI-Development-Command-Center</strong><span><span className="repo-dot" /> {githubStatus?.repository.visibility ?? (githubStatusLoading ? 'Loading visibility…' : 'Visibility unavailable')}</span></div>
+                  <span className="repo-visibility">{githubStatus?.repository.visibility.toUpperCase() ?? (githubStatusLoading ? 'LOADING' : 'UNKNOWN')}</span>
                 </div>
-                <div className="repo-stats"><div><span>Default branch</span><strong><GitBranch size={13} /> main</strong></div><div><span>Merge policy</span><strong><ShieldCheck size={13} /> Human approval</strong></div></div>
-                <a className="github-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center" target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={14} /></a>
+                <div className="repo-stats"><div><span>Default branch</span><strong><GitBranch size={13} /> {githubStatus?.repository.defaultBranch ?? (githubStatusLoading ? 'Loading…' : 'Unavailable')}</strong></div><div><span>Merge policy</span><strong><ShieldCheck size={13} /> Human approval</strong></div></div>
+                <div className="github-live-section">
+                  <div className="github-live-heading">
+                    <span>LIVE GITHUB STATUS</span>
+                    <button type="button" className="github-refresh" aria-label="Refresh GitHub status" title="Refresh GitHub status" disabled={githubStatusLoading} onClick={() => setGithubRefreshNonce((value) => value + 1)}>
+                      <RefreshCw size={13} className={githubStatusLoading ? 'refresh-spinning' : ''} />
+                    </button>
+                  </div>
+                  {githubStatusLoading && !githubStatus && <p className="github-live-muted">Loading public repository data…</p>}
+                  {githubStatusError && <p className="github-live-error" role="status">{githubStatusError}</p>}
+                  {githubStatus && (
+                    <>
+                      <div className="github-live-group">
+                        <div className="github-live-subheading"><span>Open pull requests</span><span>{githubStatus.openPullRequests.length}</span></div>
+                        {githubStatus.openPullRequests.length === 0
+                          ? <p className="github-live-muted">No open pull requests.</p>
+                          : githubStatus.openPullRequests.map((pullRequest) => (
+                            <a className="github-live-row" href={pullRequest.htmlUrl} key={pullRequest.number} target="_blank" rel="noreferrer">
+                              <GitPullRequest size={13} />
+                              <span className="github-live-row-copy"><strong>#{pullRequest.number} {pullRequest.title}</strong><small>{pullRequest.headBranch}{pullRequest.draft ? ' · Draft' : ''}</small></span>
+                              <ArrowUpRight size={12} />
+                            </a>
+                          ))}
+                      </div>
+                      <div className="github-live-group">
+                        <div className="github-live-subheading"><span>Recent workflows</span><span>{githubStatus.recentWorkflowRuns.length}</span></div>
+                        {githubStatus.recentWorkflowRuns.length === 0
+                          ? <p className="github-live-muted">No workflow runs found.</p>
+                          : githubStatus.recentWorkflowRuns.map((run) => (
+                            <a className="github-live-row" href={run.htmlUrl} key={run.id} target="_blank" rel="noreferrer">
+                              <span className={`github-run-dot run-${run.conclusion ?? run.status}`} />
+                              <span className="github-live-row-copy"><strong>{run.name} · {workflowRunLabel(run.status, run.conclusion)}</strong><small>{run.branch}</small></span>
+                              <ArrowUpRight size={12} />
+                            </a>
+                          ))}
+                      </div>
+                      <p className="github-live-updated">Updated {formatTimestamp(githubStatus.fetchedAt)}</p>
+                    </>
+                  )}
+                </div>
+                <a className="github-link" href={githubStatus?.repository.htmlUrl ?? 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center'} target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={14} /></a>
               </section>
             </div>
           </section>
