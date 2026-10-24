@@ -18,6 +18,14 @@ export interface PullRequestSummary {
   updatedAt: string;
 }
 
+export interface AgentIssueSummary {
+  number: number;
+  title: string;
+  htmlUrl: string;
+  labels: string[];
+  updatedAt: string;
+}
+
 export interface WorkflowRunSummary {
   id: number;
   name: string;
@@ -31,6 +39,7 @@ export interface WorkflowRunSummary {
 export interface GitHubLiveStatus {
   repository: RepositorySummary;
   openPullRequests: PullRequestSummary[];
+  openAgentTasks: AgentIssueSummary[];
   recentWorkflowRuns: WorkflowRunSummary[];
   fetchedAt: string;
 }
@@ -126,6 +135,33 @@ function parsePullRequests(value: unknown): PullRequestSummary[] {
   });
 }
 
+function parseAgentIssues(value: unknown): AgentIssueSummary[] {
+  if (!Array.isArray(value)) throw new Error('GitHub returned an invalid agent-task list.');
+
+  return value
+    .filter((entry) => {
+      const raw = asRecord(entry, 'issue');
+      // GitHub's issues endpoint also returns pull requests; task records must be issues.
+      if (raw.pull_request) return false;
+      const labels = Array.isArray(raw.labels) ? raw.labels : [];
+      return labels.some((label) => asRecord(label, 'issue label').name === 'agent-task');
+    })
+    .slice(0, 5)
+    .map((entry) => {
+      const raw = asRecord(entry, 'issue');
+      const labels = Array.isArray(raw.labels)
+        ? raw.labels.map((label) => asString(asRecord(label, 'issue label').name, 'issue label name'))
+        : [];
+      return {
+        number: asNumber(raw.number, 'issue number'),
+        title: asString(raw.title, 'issue title'),
+        htmlUrl: asGitHubUrl(raw.html_url, 'issue URL'),
+        labels,
+        updatedAt: typeof raw.updated_at === 'string' ? raw.updated_at : '',
+      };
+    });
+}
+
 function parseWorkflowRuns(value: unknown): WorkflowRunSummary[] {
   const root = asRecord(value, 'workflow-run list');
   if (!Array.isArray(root.workflow_runs)) throw new Error('GitHub returned an invalid workflow-run list.');
@@ -154,15 +190,17 @@ export async function fetchGitHubStatus(signal?: AbortSignal): Promise<GitHubLiv
   const encodedRepository = encodeURIComponent(REPOSITORY);
   const base = `/repos/${encodedOwner}/${encodedRepository}`;
 
-  const [repository, pullRequests, workflowRuns] = await Promise.all([
+  const [repository, pullRequests, agentIssues, workflowRuns] = await Promise.all([
     getJson(base, signal),
     getJson(`${base}/pulls?state=open&per_page=5`, signal),
+    getJson(`${base}/issues?state=open&labels=agent-task&per_page=5`, signal),
     getJson(`${base}/actions/runs?per_page=3`, signal),
   ]);
 
   return {
     repository: parseRepository(repository),
     openPullRequests: parsePullRequests(pullRequests),
+    openAgentTasks: parseAgentIssues(agentIssues),
     recentWorkflowRuns: parseWorkflowRuns(workflowRuns),
     fetchedAt: new Date().toISOString(),
   };
