@@ -59,6 +59,11 @@ function asRecord(value: unknown, context: string): JsonRecord {
   return value as JsonRecord;
 }
 
+function recordOrNull(value: unknown): JsonRecord | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  return value as JsonRecord;
+}
+
 function asString(value: unknown, context: string): string {
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`GitHub response is missing ${context}.`);
@@ -150,13 +155,16 @@ function parseAgentIssues(value: unknown): AgentIssueSummary[] {
       // GitHub's issues endpoint also returns pull requests; task records must be issues.
       if (raw.pull_request) return false;
       const labels = Array.isArray(raw.labels) ? raw.labels : [];
-      return labels.some((label) => asRecord(label, 'issue label').name === 'agent-task');
+      return labels.some((label) => recordOrNull(label)?.name === 'agent-task');
     })
     .slice(0, 5)
     .map((entry) => {
       const raw = asRecord(entry, 'issue');
       const labels = Array.isArray(raw.labels)
-        ? raw.labels.map((label) => asString(asRecord(label, 'issue label').name, 'issue label name'))
+        ? raw.labels.flatMap((label) => {
+            const record = recordOrNull(label);
+            return typeof record?.name === 'string' && record.name.length > 0 ? [record.name] : [];
+          })
         : [];
       return {
         number: asNumber(raw.number, 'issue number'),

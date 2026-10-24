@@ -119,6 +119,25 @@ describe('fetchGitHubStatus', () => {
     }
   });
 
+  it('ignores malformed label entries without discarding valid task issues', async () => {
+    const malformedLabelsIssue = {
+      ...agentIssues[0],
+      labels: [null, 'not-a-label-object', { name: 'priority:medium' }, { name: 'agent-task' }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse([malformedLabelsIssue]);
+      if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
+      return jsonResponse(repository);
+    }));
+
+    await expect(fetchGitHubStatus()).resolves.toMatchObject({
+      openAgentTasks: [{ number: 42, labels: ['priority:medium', 'agent-task'] }],
+      warnings: [],
+    });
+  });
+
   it('preserves private visibility reported by the API', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
