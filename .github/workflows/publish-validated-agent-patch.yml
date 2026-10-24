@@ -56,10 +56,11 @@ jobs:
           }
           issue_number="${BASH_REMATCH[1]}"
           patch="$artifact_dir/proposal.patch"
-          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
-
           if [[ ! -s "$patch" ]]; then
-            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "issue_number=$issue_number"
+              echo "has_patch=false"
+            } >> "$GITHUB_OUTPUT"
             {
               echo "## AI patch publication"
               echo
@@ -77,16 +78,19 @@ jobs:
           }
           git apply "$patch"
           git diff --check
-          echo "has_patch=true" >> "$GITHUB_OUTPUT"
-          echo "changed_files=$count" >> "$GITHUB_OUTPUT"
-          echo "changed_lines=$changed_lines" >> "$GITHUB_OUTPUT"
+          {
+            echo "issue_number=$issue_number"
+            echo "has_patch=true"
+            echo "changed_files=$files"
+            echo "changed_lines=$changed_lines"
+          } >> "$GITHUB_OUTPUT"
           {
             echo "## AI patch publication"
             echo
             echo "- Source issue: #$issue_number"
             echo "- Source run: $SOURCE_RUN_ID"
             echo "- Allowed scope checked by scripts/validate-agent-patch.sh: source files under src/, Markdown under docs/, and README.md (tests, workflows, dependencies, and lockfiles excluded)."
-            echo "- Bounds: $count files, $changed_lines changed lines."
+            echo "- Bounds: $files files, $changed_lines changed lines."
             echo "- Patch applied only to a temporary hosted workspace; review is still required."
           } >> "$GITHUB_STEP_SUMMARY"
 
