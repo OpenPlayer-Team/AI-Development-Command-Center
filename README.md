@@ -8,23 +8,37 @@ The React + TypeScript + Vite dashboard is an interface preview. It can create t
 
 ### Phase 2: durable GitHub task intake
 
-A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests. A separate **Agent runner preflight** workflow can validate an existing open task Issue and its labels, but it deliberately stops before execution because no provider or isolated code runner is configured.
+A manual, GitHub-native intake path is implemented in `.github/workflows/task-intake.yml`. It creates a real GitHub Issue for each submitted task, with priority labels and a record of the submitter/source commit. It does **not** run an AI agent, execute repository code, or merge pull requests.
 
 To create a durable task (after this reviewed feature branch has been merged into the default branch, because GitHub only enables `workflow_dispatch` for workflows present on the default branch):
 
 1. Open the repository's **Actions** tab.
 2. Select **Create durable task**.
-3. Click **Run workflow** on the feature branch.
-4. Enter a short title, detailed goal/acceptance criteria, and priority.
-5. Run it, then open the issue URL in the workflow summary.
+3. Click **Run workflow** and enter a short title, detailed goal/acceptance criteria, and priority.
+4. Run it, then open the issue URL in the workflow summary.
 
-If the workflow is not listed or cannot create an issue, check repository Actions permissions and the workflow run log. The workflow uses the built-in `GITHUB_TOKEN` with `issues: write`; no personal access token or paid service is required.
+The workflow uses the built-in `GITHUB_TOKEN` with `issues: write`; no personal access token or paid service is required. Task text is untrusted input and is stored as issue content only.
 
-**Security boundary:** task text is untrusted input. It is stored as issue content only. This workflow does not interpret it as shell commands.
+### Phase 3: local AI planning (planning only)
 
-### Validate a task before execution
+The `.github/workflows/local-agent-plan.yml` workflow can send an issue to a pre-installed local Ollama model and upload a Markdown plan. It does **not** check out source code, execute model-generated commands, edit files, create a branch, open a PR, or merge anything.
 
-After the reviewed branch has been merged to the default branch, open **Actions → Agent runner preflight → Run workflow** and provide the number of an open Issue carrying the `agent-task` label. The workflow has read-only permissions, validates bounded input, and publishes a preflight summary. A successful preflight is **not** evidence that an AI agent executed the task; it does not check out source code, access secrets, create a branch, or open a pull request.
+Prerequisites:
+- A dedicated, disposable Linux self-hosted runner registered with labels `self-hosted`, `linux`, and `ai-agent`.
+- Ollama installed and running on that runner, with the desired model already downloaded.
+- Repository variable `OLLAMA_MODEL` set to the exact installed model name (Settings → Secrets and variables → Actions → Variables).
+
+Do not use a personal workstation or runner with personal/production credentials. The task and model output are untrusted. The runner must be isolated and have no unnecessary secrets or network access.
+
+After this reviewed branch is merged into the default branch:
+
+1. Open **Actions → Local AI task planner → Run workflow**.
+2. Enter the number of an open issue with the `agent-task` label.
+3. Inspect the run summary and download the `local-agent-plan-N` artifact.
+
+The workflow requires the dedicated self-hosted runner; it will not run successfully until that infrastructure and model variable are configured. It has not been end-to-end verified yet. A plan is a draft, not evidence that the repository was inspected or tests passed.
+
+See [local runner setup](docs/LOCAL-AGENT-RUNNER.md) for details. The separate **Agent runner preflight** only validates an issue and does not invoke a model.
 
 ## Local development
 
@@ -51,10 +65,10 @@ Expected project-site URL, available only after Pages is enabled and a deploymen
 ## Cost and safety
 
 - No paid provider is configured or called.
-- GitHub Actions and Pages have account/usage limits; free availability is not unlimited.
+- Local Ollama inference can avoid model API charges, but runner hardware/electricity and GitHub usage limits still apply.
 - No API keys belong in frontend code.
 - No automatic pull-request merge is enabled.
-- Local-model fallback requires an explicitly configured, reachable machine or self-hosted runner.
 - A GitHub Issue is a durable queue record, not proof that an agent has run the task.
+- Autonomous code editing is not enabled yet; it requires a separate isolated execution design and explicit human review.
 
 See [architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md) for constraints and next steps.
