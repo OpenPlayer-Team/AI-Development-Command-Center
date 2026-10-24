@@ -5,7 +5,7 @@
 - [x] Dashboard UI and local task composer
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
-- [x] CI tests and production build pass on GitHub Actions
+- [x] CI tests and production build pass on a prior branch revision
 - [ ] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
@@ -19,25 +19,27 @@
 - [ ] Validate the intake workflow by creating a test issue, then close/delete it as appropriate
 
 ## Phase 3 — Bounded agent runner
-- [ ] Define a threat model and allowed tool/command policy
 - [x] Add a manual task-validation preflight workflow with a short timeout and read-only permissions
 - [x] Validate open issue, agent-task label, and bounded title/body length before any future execution
-- [x] Explicitly report that no AI execution or code execution is configured
-- [ ] Implement an isolated bounded execution job after provider/runner design and security review
-- [ ] Store secrets only in GitHub Actions secrets
-- [ ] Keep pull requests from untrusted code isolated from secrets
-- [ ] Require human approval before creating or applying code changes
+- [x] Add opt-in local Ollama planning workflow that creates a plan artifact only
+- [x] Document dedicated runner requirements and the security boundary
+- [ ] Run the local planning workflow end-to-end on a dedicated isolated runner
+- [ ] Define and review a threat model and allowed tool/command policy
+- [ ] Implement isolated code-editing execution only after security review
+- [ ] Keep untrusted task/repository content isolated from secrets
+- [ ] Require explicit human approval before creating or applying code changes
 
 ## Phase 4 — Provider routing and local fallback
 - [ ] Implement provider interface and health checks
-- [ ] Add optional local model endpoint configuration
-- [ ] Queue tasks when no provider is available
+- [ ] Add provider-unavailable queue behavior and retry limits
 - [ ] Enforce €0 budget with no paid fallback
+- [ ] Do not route to cloud APIs unless explicitly configured and budget-approved
 
 ## Phase 5 — Release readiness
 - [ ] Verify responsive UI and accessibility
-- [ ] Run all tests and production build
+- [ ] Run all tests and production build on the latest revision
 - [ ] Configure GitHub Pages and verify deployment
+- [ ] Commit a package lockfile and use reproducible dependency installation
 - [ ] Document limitations, quotas, and operational procedures
 
 A checklist item is complete only when implementation or verification evidence exists. A workflow file is not considered operationally verified until an actual run has been inspected.
