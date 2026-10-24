@@ -143,3 +143,12 @@ jobs:
           path: ${{ runner.temp }}/agent-plan/plan.md
           if-no-files-found: error
           retention-days: 7
+
+      - name: Clean up local task and model context
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/agent-issue.json" \
+            "$RUNNER_TEMP/agent-task-title.txt" "$RUNNER_TEMP/agent-task-body.txt" \
+            "$RUNNER_TEMP/agent-task-title.txt.redacted" "$RUNNER_TEMP/agent-task-body.txt.redacted" \
+            "$RUNNER_TEMP/agent-plan/prompt.txt" "$RUNNER_TEMP/agent-plan/plan.raw.md"

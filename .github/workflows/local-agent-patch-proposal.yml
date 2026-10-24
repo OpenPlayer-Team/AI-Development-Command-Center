@@ -130,6 +130,12 @@ jobs:
             cat "$RUNNER_TEMP/agent-source-context.txt"
           } > "$out/prompt.txt"
           ollama run "$OLLAMA_MODEL" < "$out/prompt.txt" > "$out/proposal.raw"
+          node scripts/redact-agent-context.mjs "$out/proposal.raw" > "$out/proposal.redacted"
+          if ! cmp -s "$out/proposal.raw" "$out/proposal.redacted"; then
+            echo "::error::Model output contained secret-like material; refusing the proposal artifact."
+            exit 1
+          fi
+          rm -f "$out/proposal.redacted"
           if grep -Fxq 'NO_SAFE_PATCH' "$out/proposal.raw"; then
             echo "Model declined to propose a patch from the available context." > "$out/README.txt"
             : > "$out/proposal.patch"
@@ -174,6 +180,18 @@ jobs:
             ${{ runner.temp }}/agent-patch-proposal/README.txt
           if-no-files-found: error
           retention-days: 7
+
+      - name: Clean up local task and model context
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/agent-issue.json" \
+            "$RUNNER_TEMP/issue-title.txt" "$RUNNER_TEMP/issue-body.txt" "$RUNNER_TEMP/issue-url.txt" \
+            "$RUNNER_TEMP/issue-title.txt.redacted" "$RUNNER_TEMP/issue-body.txt.redacted" \
+            "$RUNNER_TEMP/agent-source-context.txt" \
+            "$RUNNER_TEMP/agent-patch-proposal/prompt.txt" \
+            "$RUNNER_TEMP/agent-patch-proposal/proposal.raw" \
+            "$RUNNER_TEMP/agent-patch-proposal/proposal.redacted"
 
 
   validate-proposal:
