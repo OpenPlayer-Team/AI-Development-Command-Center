@@ -28,8 +28,13 @@ jobs:
         shell: bash
         env:
           OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
+          [[ "$GITHUB_REF_NAME" == "$DEFAULT_BRANCH" ]] || {
+            echo "::error::Run this workflow from the default branch ($DEFAULT_BRANCH) so the patch base matches the publication target."
+            exit 1
+          }
           command -v ollama >/dev/null || { echo "::error::Ollama CLI is not installed."; exit 1; }
           [[ -n "${OLLAMA_MODEL//[[:space:]]/}" ]] || { echo "::error::Set repository variable OLLAMA_MODEL."; exit 1; }
           ollama list | awk 'NR > 1 {print $1}' | grep -Fxq "$OLLAMA_MODEL" || {
