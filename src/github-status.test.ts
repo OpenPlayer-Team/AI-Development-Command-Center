@@ -49,7 +49,7 @@ describe('fetchGitHubStatus', () => {
   });
 
   it('loads repository visibility, open pull requests and recent workflow runs without credentials', async () => {
-    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
+    const mockFetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
@@ -104,7 +104,7 @@ describe('fetchGitHubStatus', () => {
   });
 
   it('rejects non-GitHub links in API content', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) {
         return jsonResponse([{ ...pullRequests[0], html_url: 'https://evil.example/steal' }]);
