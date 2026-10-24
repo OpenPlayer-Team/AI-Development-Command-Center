@@ -202,9 +202,10 @@ jobs:
             echo "No patch was proposed; skipping test execution."
             exit 0
           fi
-          git apply --check proposal/proposal.patch
+          metrics=$(bash scripts/validate-agent-patch.sh proposal/proposal.patch)
           git apply proposal/proposal.patch
           echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          echo "Patch policy validation: $metrics" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Node.js
         if: steps.patch.outputs.has_patch == 'true'
