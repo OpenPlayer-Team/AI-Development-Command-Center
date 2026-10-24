@@ -2,6 +2,11 @@ const OWNER = 'OpenPlayer-Team';
 const REPOSITORY = 'AI-Development-Command-Center';
 const API_BASE = 'https://api.github.com';
 
+export const GITHUB_REPOSITORY_URL = `https://github.com/${OWNER}/${REPOSITORY}`;
+export const GITHUB_TASK_INTAKE_URL = `${GITHUB_REPOSITORY_URL}/actions/workflows/task-intake.yml`;
+export const GITHUB_ACTIONS_URL = `${GITHUB_REPOSITORY_URL}/actions`;
+export const LOCAL_AGENT_RUNNER_DOC_URL = `${GITHUB_REPOSITORY_URL}/blob/main/docs/LOCAL-AGENT-RUNNER.md`;
+
 export interface RepositorySummary {
   fullName: string;
   visibility: 'public' | 'private' | 'internal';

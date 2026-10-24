@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchGitHubStatus } from './github-status';
+import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, LOCAL_AGENT_RUNNER_DOC_URL } from './github-status';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return {
@@ -59,6 +59,15 @@ const workflowRuns = {
     },
   ],
 };
+
+describe('canonical repository links', () => {
+  it('derives the dashboard links from one repository base', () => {
+    expect(GITHUB_REPOSITORY_URL).toBe('https://github.com/OpenPlayer-Team/AI-Development-Command-Center');
+    expect(GITHUB_TASK_INTAKE_URL).toBe(GITHUB_REPOSITORY_URL + '/actions/workflows/task-intake.yml');
+    expect(GITHUB_ACTIONS_URL).toBe(GITHUB_REPOSITORY_URL + '/actions');
+    expect(LOCAL_AGENT_RUNNER_DOC_URL).toBe(GITHUB_REPOSITORY_URL + '/blob/main/docs/LOCAL-AGENT-RUNNER.md');
+  });
+});
 
 describe('fetchGitHubStatus', () => {
   afterEach(() => {

@@ -6,7 +6,7 @@ import {
   RefreshCw, Settings2, ShieldCheck, Sparkles, Terminal, Workflow, Zap,
 } from 'lucide-react';
 import { countTasksByStatus, createTask, type Task } from './task-utils';
-import { fetchGitHubStatus, type GitHubLiveStatus } from './github-status';
+import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, LOCAL_AGENT_RUNNER_DOC_URL, type GitHubLiveStatus } from './github-status';
 
 const initialTasks: Task[] = [
   { id: 'task-104', title: 'Audit repository structure and dependencies', project: 'Command Center', status: 'done', priority: 'high', agent: 'Repository Analyst', updated: '12 min ago' },
@@ -135,7 +135,7 @@ function App() {
             <div>
               <div className="eyebrow"><span className="eyebrow-line" /> YOUR SOFTWARE WORKSPACE</div>
               <h1>Build something <span>extraordinary.</span></h1>
-              <p className="welcome-subtitle">Your development command center. One place to plan, build, test, and review.</p><a className="durable-task-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml" target="_blank" rel="noreferrer">Create a durable GitHub task <ArrowUpRight size={14} /></a>
+              <p className="welcome-subtitle">Your development command center. One place to plan, build, test, and review.</p><a className="durable-task-link" href={GITHUB_TASK_INTAKE_URL} target="_blank" rel="noreferrer">Create a durable GitHub task <ArrowUpRight size={14} /></a>
             </div>
             <button className="primary-button" onClick={() => setShowComposer((open) => !open)}><Plus size={17} /> New task</button>
           </section>
@@ -153,7 +153,7 @@ function App() {
                 <input autoFocus value={taskInput} onChange={(event) => setTaskInput(event.target.value)} placeholder="e.g. Add authentication tests to my repository…" aria-label="New task description" />
                 <button className="primary-button" type="submit" disabled={!taskInput.trim()}><Send size={15} /> Add task</button>
               </form>
-              <p className="composer-footnote"><Sparkles size={13} /> Demo-only: browser memory, no code execution or AI call. <a href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml" target="_blank" rel="noreferrer">Open durable task intake <ArrowUpRight size={12} /></a></p>
+              <p className="composer-footnote"><Sparkles size={13} /> Demo-only: browser memory, no code execution or AI call. <a href={GITHUB_TASK_INTAKE_URL} target="_blank" rel="noreferrer">Open durable task intake <ArrowUpRight size={12} /></a></p>
             </section>
           )}
 
@@ -264,7 +264,7 @@ function App() {
                     </>
                   )}
                 </div>
-                <a className="github-link" href={githubStatus?.repository.htmlUrl ?? 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center'} target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={14} /></a>
+                <a className="github-link" href={githubStatus?.repository.htmlUrl ?? GITHUB_REPOSITORY_URL} target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={14} /></a>
               </section>
             </div>
           </section>
@@ -337,8 +337,8 @@ function FocusedWorkspaceView({
   const showIssues = activeNav === 'Task queue' || activeNav === 'GitHub activity';
   const showPullRequests = activeNav === 'Pull requests' || activeNav === 'GitHub activity';
   const showRuns = activeNav === 'Workflows' || activeNav === 'Terminal logs' || activeNav === 'GitHub activity';
-  const taskIntakeUrl = 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml';
-  const taskDocsUrl = 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/blob/main/docs/LOCAL-AGENT-RUNNER.md';
+  const taskIntakeUrl = GITHUB_TASK_INTAKE_URL;
+  const taskDocsUrl = LOCAL_AGENT_RUNNER_DOC_URL;
 
   return (
     <section className="focus-workspace" aria-labelledby="focus-workspace-title">
@@ -399,7 +399,7 @@ function FocusedWorkspaceView({
       {showRuns && (
         <section className="panel focus-list" aria-label="Recent workflow runs">
           <div className="panel-heading compact"><div><div className="section-title">Recent workflow runs <span className="tiny-count">{githubStatus?.recentWorkflowRuns.length ?? '—'}</span></div><p>Follow each run for logs, artifacts and detailed check results</p></div>
-            <a className="subtle-button focus-action-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions" target="_blank" rel="noreferrer">Open Actions <ArrowUpRight size={13} /></a>
+            <a className="subtle-button focus-action-link" href={GITHUB_ACTIONS_URL} target="_blank" rel="noreferrer">Open Actions <ArrowUpRight size={13} /></a>
           </div>
           {!githubStatus && <p className="focus-empty">{githubStatusLoading ? 'Loading workflow runs…' : 'Workflow data is unavailable. Check the status above and retry.'}</p>}
           {githubStatus?.recentWorkflowRuns.length === 0 && <p className="focus-empty">No workflow runs found.</p>}
