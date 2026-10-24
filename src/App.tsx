@@ -72,7 +72,7 @@ function App() {
 
   const navItems = [
     { label: 'Overview', icon: LayoutDashboard },
-    { label: 'Task queue', icon: ListTodo, count: counts.queued },
+    { label: 'Task queue', icon: ListTodo, count: githubStatus?.openAgentTasks.length },
     { label: 'Agent workspace', icon: Bot },
     { label: 'GitHub activity', icon: GitBranch },
   ];
@@ -95,14 +95,14 @@ function App() {
         <nav className="primary-nav" aria-label="Main navigation">
           {navItems.map(({ label, icon: Icon, count }) => (
             <button key={label} className={`nav-item ${activeNav === label ? 'active' : ''}`} onClick={() => setActiveNav(label)}>
-              <Icon size={17} /><span>{label}</span>{count ? <span className="nav-count">{count}</span> : null}
+              <Icon size={17} /><span>{label}</span>{count !== undefined ? <span className="nav-count">{count}</span> : null}
             </button>
           ))}
         </nav>
 
         <p className="nav-label nav-label-spaced">DEVELOPMENT</p>
         <nav className="primary-nav" aria-label="Development navigation">
-          <button className="nav-item" onClick={() => setActiveNav('Pull requests')}><GitPullRequest size={17} /><span>Pull requests</span><span className="nav-count">1</span></button>
+          <button className="nav-item" onClick={() => setActiveNav('Pull requests')}><GitPullRequest size={17} /><span>Pull requests</span>{githubStatus ? <span className="nav-count">{githubStatus.openPullRequests.length}</span> : null}</button>
           <button className="nav-item" onClick={() => setActiveNav('Workflows')}><Workflow size={17} /><span>Workflows</span></button>
           <button className="nav-item" onClick={() => setActiveNav('Terminal logs')}><Terminal size={17} /><span>Terminal logs</span></button>
         </nav>

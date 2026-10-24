@@ -95,4 +95,4 @@ Expected project-site URL, available only after Pages is enabled and a deploymen
 - A GitHub Issue is a durable queue record, not proof that an agent has run the task.
 - The optional patch workflow can propose a limited code change and open a PR after validation; it cannot merge, and a human must review it.
 
-See [architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md) for constraints and next steps.
+See [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), and the [initial threat model](docs/THREAT-MODEL.md) for constraints, residual risks, and next steps.
