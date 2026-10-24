@@ -144,7 +144,7 @@ jobs:
               echo
               echo "- Issue: $ISSUE_URL"
               echo "- Model: $OLLAMA_MODEL (local Ollama)"
-              echo "- Validation: `git apply --check` passed; this checks patch applicability only."
+              echo "- Validation: git apply --check passed; this checks patch applicability only."
               echo "- Tests: not run."
               echo "- Changes: not applied, committed, pushed, or opened as a PR."
               echo "- Review: required; model output and source context are untrusted."
