@@ -25,6 +25,7 @@
 - [x] Validate open issue, agent-task label, and bounded title/body length before any future execution
 - [x] Add opt-in local Ollama planning workflow that creates a plan artifact only
 - [x] Document dedicated runner requirements and the security boundary
+- [x] Add a no-token local Ollama health check for runner CLI, configured model, and loopback API
 - [ ] Run the local planning workflow end-to-end on a dedicated isolated runner
 - [x] Document the initial threat model and command boundaries in `docs/THREAT-MODEL.md`
 - [ ] Independently review the threat model and command policy

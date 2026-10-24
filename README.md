@@ -40,7 +40,7 @@ After this reviewed branch is merged into the default branch:
 
 The workflow requires the dedicated self-hosted runner; it will not run successfully until that infrastructure and model variable are configured. It has not been end-to-end verified yet. A plan is a draft, not evidence that the repository was inspected or tests passed.
 
-See [local runner setup](docs/LOCAL-AGENT-RUNNER.md) for details. The separate **Agent runner preflight** only validates an issue and does not invoke a model.
+See [local runner setup](docs/LOCAL-AGENT-RUNNER.md) for details, including the **Local Ollama runner health** diagnostic. The separate **Agent runner preflight** only validates an issue and does not invoke a model.
 
 ### Phase 4: local AI patch proposal (not applied)
 

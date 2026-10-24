@@ -27,6 +27,12 @@ Do not register a personal daily-use workstation or a host with SSH keys, person
 
 These manual workflows must first be present on the default branch. A workflow existing only on the feature branch may not be available for manual dispatch.
 
+### Check the local provider before using it
+
+Run **Actions → Local Ollama runner health → Run workflow** first. It checks the expected self-hosted runner labels, required CLI tools, the exact `OLLAMA_MODEL` installation, and the Ollama API on `127.0.0.1:11434`. It uses no repository checkout, Issues, model inference, artifacts, or write token. The API probe is deliberately fixed to loopback; this workflow does not send a prompt or contact a configured remote Ollama host.
+
+A passing health check establishes only that the CLI/API and configured model are present at that moment. It does not prove that inference will complete within budget or that the planner/proposal/publisher pipeline works end-to-end.
+
 1. Review and merge the feature PR only after inspecting its diffs and CI results.
 2. Register and validate the isolated self-hosted runner.
 3. Install Ollama and download the selected model, then set `OLLAMA_MODEL`.
