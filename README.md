@@ -76,7 +76,7 @@ npm run build
 npm audit
 ```
 
-The CI workflow runs tests, a production build, and a diagnostic dependency audit. Resolve audit findings based on the actual report; do not blindly use `npm audit fix --force`.
+The CI workflow runs actionlint, patch-policy tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings or an unusable audit result; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
 
 ## GitHub deployment
 

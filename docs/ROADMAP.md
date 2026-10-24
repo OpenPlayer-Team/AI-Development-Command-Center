@@ -5,7 +5,7 @@
 - [x] Dashboard UI and local task composer
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
-- [x] CI tests and production build pass on a prior branch revision
+- [x] CI run on commit `20c72c48ace7dd736fdfe934fee0caf677b528ee` passed workflow lint, patch-policy tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
 - [x] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
@@ -32,7 +32,8 @@
 - [x] Add a publisher workflow that opens a restricted-scope PR only after successful validation; it never merges
 - [x] Extract patch boundary policy into a reusable validator and cover accepted/rejected cases in CI
 - [ ] Run the local proposal → validation → PR path end-to-end on a dedicated isolated runner
-- [x] Add best-effort redaction for common token, key, password, bearer, URL-credential, and private-key patterns in issue/source context
+- [x] Add best-effort redaction for common service tokens, key/password assignments, bearer tokens, credential URLs, JWT-like strings, and PEM private keys in planner issue input, planner output, and patch-proposal context
+- [x] Reject generated patch output when redaction detects secret-like material and clean local context/artifacts after upload
 - [ ] Add a dedicated secret scanner and review redaction false positives/negatives; regex redaction cannot guarantee all secrets are removed
 - [ ] Require explicit human review and approval before merging any agent PR
 
@@ -44,7 +45,7 @@
 
 ## Phase 5 — Release readiness
 - [ ] Verify responsive UI and accessibility on actual desktop/mobile browsers
-- [ ] Run all tests and production build on the latest revision
+- [x] Run all tests and production build on implementation revision `20c72c48ace7dd736fdfe934fee0caf677b528ee` (repeat before release)
 - [ ] Configure GitHub Pages and verify deployment
 - [x] Commit package lockfile and use reproducible dependency installation via `npm ci`
 - [ ] Document limitations, quotas, and operational procedures
