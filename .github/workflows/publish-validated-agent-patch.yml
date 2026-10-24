@@ -271,7 +271,7 @@ jobs:
           git diff --cached --check
           git diff --cached --quiet && { echo "::error::Validated patch produced no tracked changes."; exit 1; }
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "ai: validated proposal for issue #$ISSUE_NUMBER"
           auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
           git -c http.extraheader="$auth_header" push origin "$branch"
