@@ -157,6 +157,8 @@ function App() {
             </section>
           )}
 
+          {activeNav === 'Overview' ? (
+            <>
           <section className="metrics-grid" aria-label="Task metrics">
             <MetricCard label="Total tasks" value={String(tasks.length).padStart(2, '0')} caption="Tracked in this session" icon={<ListTodo size={18} />} tone="violet" trend="Workspace" />
             <MetricCard label="In progress" value={String(counts.running).padStart(2, '0')} caption="Currently being worked on" icon={<Activity size={18} />} tone="blue" trend="Live state" />
@@ -283,9 +285,163 @@ function App() {
           </section>
 
           <footer className="app-footer"><span><span className="footer-dot" /> Interface online</span><span>GitHub status <span className="footer-separator">/</span> Read-only sync, refresh on demand</span><span>Human review before merge <Sparkles size={12} /></span></footer>
+            </>
+          ) : (
+            <FocusedWorkspaceView
+              activeNav={activeNav}
+              githubStatus={githubStatus}
+              githubStatusError={githubStatusError}
+              githubStatusLoading={githubStatusLoading}
+              onRefresh={() => setGithubRefreshNonce((value) => value + 1)}
+            />
+          )}
         </div>
       </main>
     </div>
+  );
+}
+
+type FocusedWorkspaceViewProps = {
+  activeNav: string;
+  githubStatus: GitHubLiveStatus | null;
+  githubStatusError: string | null;
+  githubStatusLoading: boolean;
+  onRefresh: () => void;
+};
+
+function FocusedWorkspaceView({
+  activeNav,
+  githubStatus,
+  githubStatusError,
+  githubStatusLoading,
+  onRefresh,
+}: FocusedWorkspaceViewProps) {
+  const titles: Record<string, string> = {
+    'Task queue': 'Durable task queue',
+    'Agent workspace': 'Agent workspace',
+    'GitHub activity': 'GitHub activity',
+    'Pull requests': 'Pull requests for human review',
+    Workflows: 'Workflow runs',
+    'Terminal logs': 'Execution and validation logs',
+    Settings: 'Workspace settings',
+  };
+  const descriptions: Record<string, string> = {
+    'Task queue': 'Open GitHub Issues labelled agent-task are the durable queue. The quick composer on Overview remains a browser-only demo.',
+    'Agent workspace': 'Agent roles are planned, but no persistent worker or provider is connected to this dashboard.',
+    'GitHub activity': 'Live public repository data, fetched without credentials and displayed read-only.',
+    'Pull requests': 'Inspect proposed changes and CI before making any merge decision.',
+    Workflows: 'Recent GitHub Actions runs and their current outcomes. A workflow run is not proof of correctness on its own.',
+    'Terminal logs': 'This dashboard does not expose a remote terminal. Open a GitHub Actions run to inspect its logs safely.',
+    Settings: 'This preview has no connected account, no paid provider, and no credential storage.',
+  };
+  const showIssues = activeNav === 'Task queue' || activeNav === 'GitHub activity';
+  const showPullRequests = activeNav === 'Pull requests' || activeNav === 'GitHub activity';
+  const showRuns = activeNav === 'Workflows' || activeNav === 'Terminal logs' || activeNav === 'GitHub activity';
+  const taskIntakeUrl = 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml';
+  const taskDocsUrl = 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/blob/main/docs/LOCAL-AGENT-RUNNER.md';
+
+  return (
+    <section className="focus-workspace" aria-labelledby="focus-workspace-title">
+      <div className="panel focus-intro">
+        <div className="focus-intro-heading">
+          <div>
+            <div className="eyebrow"><span className="eyebrow-line" /> WORKSPACE / {activeNav.toUpperCase()}</div>
+            <h2 id="focus-workspace-title">{titles[activeNav] ?? activeNav}</h2>
+            <p>{descriptions[activeNav] ?? 'Workspace status and available actions.'}</p>
+          </div>
+          <button type="button" className="subtle-button focus-refresh" onClick={onRefresh} disabled={githubStatusLoading}>
+            <RefreshCw size={14} className={githubStatusLoading ? 'refresh-spinning' : ''} />
+            Refresh GitHub
+          </button>
+        </div>
+        <div className="focus-status-line" role="status">
+          {githubStatusLoading && !githubStatus ? 'Loading public GitHub data…' :
+            githubStatusError ? githubStatusError :
+            githubStatus ? 'Connected to public GitHub metadata in read-only mode.' :
+            'Live GitHub status is unavailable.'}
+        </div>
+        {githubStatus?.warnings.map((warning) => <p className="github-live-warning" role="status" key={warning}>{warning}</p>)}
+      </div>
+
+      {showIssues && (
+        <section className="panel focus-list" aria-label="Open agent tasks">
+          <div className="panel-heading compact">
+            <div><div className="section-title">Open agent tasks <span className="tiny-count">{githubStatus?.openAgentTasks.length ?? '—'}</span></div><p>GitHub Issues labelled agent-task</p></div>
+            <a className="subtle-button focus-action-link" href={taskIntakeUrl} target="_blank" rel="noreferrer">Create durable task <ArrowUpRight size={13} /></a>
+          </div>
+          {!githubStatus && <p className="focus-empty">{githubStatusLoading ? 'Loading issues…' : 'Issue data is unavailable. Check the status above and retry.'}</p>}
+          {githubStatus?.openAgentTasks.length === 0 && <p className="focus-empty">No open agent tasks found. Create a durable task to add one to the queue.</p>}
+          {githubStatus?.openAgentTasks.map((issue) => (
+            <a className="focus-record" href={issue.htmlUrl} key={issue.number} target="_blank" rel="noreferrer">
+              <span className="focus-record-icon"><ListTodo size={16} /></span>
+              <span className="focus-record-copy"><strong>#{issue.number} · {issue.title}</strong><small>{issue.labels.filter((label) => label !== 'agent-task').join(' · ') || 'agent-task'} · Updated {formatTimestamp(issue.updatedAt)}</small></span>
+              <ArrowUpRight size={14} />
+            </a>
+          ))}
+        </section>
+      )}
+
+      {showPullRequests && (
+        <section className="panel focus-list" aria-label="Open pull requests">
+          <div className="panel-heading compact"><div><div className="section-title">Pull requests <span className="tiny-count">{githubStatus?.openPullRequests.length ?? '—'}</span></div><p>Every proposal still requires human review</p></div></div>
+          {!githubStatus && <p className="focus-empty">{githubStatusLoading ? 'Loading pull requests…' : 'Pull-request data is unavailable. Check the status above and retry.'}</p>}
+          {githubStatus?.openPullRequests.length === 0 && <p className="focus-empty">No open pull requests.</p>}
+          {githubStatus?.openPullRequests.map((pullRequest) => (
+            <a className="focus-record" href={pullRequest.htmlUrl} key={pullRequest.number} target="_blank" rel="noreferrer">
+              <span className="focus-record-icon"><GitPullRequest size={16} /></span>
+              <span className="focus-record-copy"><strong>#{pullRequest.number} · {pullRequest.title}</strong><small>{pullRequest.headBranch}{pullRequest.draft ? ' · Draft' : ''} · Updated {formatTimestamp(pullRequest.updatedAt)}</small></span>
+              <ArrowUpRight size={14} />
+            </a>
+          ))}
+        </section>
+      )}
+
+      {showRuns && (
+        <section className="panel focus-list" aria-label="Recent workflow runs">
+          <div className="panel-heading compact"><div><div className="section-title">Recent workflow runs <span className="tiny-count">{githubStatus?.recentWorkflowRuns.length ?? '—'}</span></div><p>Follow each run for logs, artifacts and detailed check results</p></div>
+            <a className="subtle-button focus-action-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions" target="_blank" rel="noreferrer">Open Actions <ArrowUpRight size={13} /></a>
+          </div>
+          {!githubStatus && <p className="focus-empty">{githubStatusLoading ? 'Loading workflow runs…' : 'Workflow data is unavailable. Check the status above and retry.'}</p>}
+          {githubStatus?.recentWorkflowRuns.length === 0 && <p className="focus-empty">No workflow runs found.</p>}
+          {githubStatus?.recentWorkflowRuns.map((run) => (
+            <a className="focus-record" href={run.htmlUrl} key={run.id} target="_blank" rel="noreferrer">
+              <span className={`github-run-dot run-${run.conclusion ?? run.status}`} />
+              <span className="focus-record-copy"><strong>{run.name} · {workflowRunLabel(run.status, run.conclusion)}</strong><small>{run.branch} · Updated {formatTimestamp(run.updatedAt)}</small></span>
+              <ArrowUpRight size={14} />
+            </a>
+          ))}
+        </section>
+      )}
+
+      {activeNav === 'Agent workspace' && (
+        <>
+          <section className="panel focus-list">
+            <div className="panel-heading compact"><div><div className="section-title">Agent roles</div><p>Planned components, not running background workers</p></div></div>
+            <div className="focus-agent-grid">
+              <AgentRow icon={<Command size={16} />} name="Coordinator" description="Plans work and routes bounded tasks" color="violet" status="Designed" />
+              <AgentRow icon={<Search size={16} />} name="Repository analyst" description="Inspects source and maps dependencies" color="blue" status="Designed" />
+              <AgentRow icon={<Code2 size={16} />} name="Developer" description="Proposes restricted source diffs" color="cyan" status="Not connected" />
+              <AgentRow icon={<Check size={16} />} name="Test engineer" description="Runs tests/build in an isolated hosted workspace" color="green" status="Not connected" />
+            </div>
+          </section>
+          <section className="panel focus-note">
+            <ShieldCheck size={18} />
+            <div><strong>Safe execution path</strong><p>Local Ollama proposal → restricted patch validator → isolated test/build → draft for human review. A dedicated disposable Linux runner and the OLLAMA_MODEL repository variable are required.</p>
+              <a href={taskDocsUrl} target="_blank" rel="noreferrer">Read local runner requirements <ArrowUpRight size={13} /></a>
+            </div>
+          </section>
+        </>
+      )}
+
+      {activeNav === 'Settings' && (
+        <section className="focus-settings-grid">
+          <div className="panel focus-setting"><span>Provider mode</span><strong>Local-only design · not connected</strong><small>No cloud API is called by this UI.</small></div>
+          <div className="panel focus-setting"><span>Budget policy</span><strong>€0 paid-service target</strong><small>There is no automatic paid fallback.</small></div>
+          <div className="panel focus-setting"><span>GitHub access</span><strong>Anonymous read-only</strong><small>The browser stores no GitHub token.</small></div>
+          <div className="panel focus-setting"><span>Merge policy</span><strong>Human approval required</strong><small>No automatic merge capability is enabled.</small></div>
+        </section>
+      )}
+    </section>
   );
 }
 
