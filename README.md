@@ -42,9 +42,9 @@ See [local runner setup](docs/LOCAL-AGENT-RUNNER.md) for details. The separate *
 
 ### Phase 4: local AI patch proposal (not applied)
 
-The `.github/workflows/local-agent-patch-proposal.yml` workflow can ask the local Ollama model to propose a unified diff using a bounded source snapshot. It checks that the diff applies cleanly to the checkout and uploads it as an artifact for human review. **It does not apply the patch, run generated code or tests, commit, push, open a PR, or merge.**
+The `.github/workflows/local-agent-patch-proposal.yml` workflow can ask the local Ollama model to propose a unified diff using a bounded source snapshot. It checks that the diff applies cleanly and uploads it for review. A separate ephemeral GitHub-hosted runner applies the proposal only in its temporary workspace and runs project tests/build when a patch exists. **It does not commit, push, open a PR, or merge.**
 
-It requires the same dedicated isolated Linux runner, local Ollama model, and `OLLAMA_MODEL` repository variable described above. It has not been end-to-end verified on that runner. `git apply --check` validates applicability only, not correctness. Review the artifact and run tests separately before using any part of it.
+It requires the same dedicated isolated Linux runner, local Ollama model, and `OLLAMA_MODEL` repository variable described above. The local Ollama generation step has not been end-to-end verified on a configured self-hosted runner. The hosted test job is isolated from that runner and its credentials. Passing tests do not prove correctness or security. `git apply --check` validates applicability only. Review the artifact and run tests separately before using any part of it.
 
 See [local patch proposal setup and safety limits](docs/LOCAL-AGENT-PATCH-PROPOSAL.md).
 
