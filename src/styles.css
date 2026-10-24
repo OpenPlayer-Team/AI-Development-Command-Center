@@ -193,3 +193,32 @@ h1 span{background:linear-gradient(90deg,#b4a0ff,#76dbe6);-webkit-background-cli
   font-weight: 650;
 }
 .composer-footnote a:hover { text-decoration: underline; }
+
+
+/* Live, read-only GitHub status */
+.github-live-section{margin:15px 0 14px;padding:12px;border:1px solid #292d3d;border-radius:9px;background:#0e121b}
+.github-live-heading,.github-live-subheading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.github-live-heading{color:#9ea7bc;font-size:9px;font-weight:700;letter-spacing:1.1px}
+.github-refresh{width:26px;height:26px;display:grid;place-items:center;border:1px solid #30364a;border-radius:6px;background:#171c29;color:#aeb6cb}
+.github-refresh:hover:not(:disabled){color:#d2c4ff;border-color:#65548c}
+.github-refresh:disabled{opacity:.55;cursor:wait}
+.refresh-spinning{animation:github-refresh-spin 1.2s linear infinite}
+@keyframes github-refresh-spin{to{transform:rotate(360deg)}}
+.github-live-group{margin-top:13px}
+.github-live-subheading{font-size:10px;font-weight:600;color:#d6d9e7;margin-bottom:7px}
+.github-live-subheading>span:last-child{min-width:19px;padding:2px 5px;text-align:center;border:1px solid #30374a;border-radius:5px;color:#a9b1c8;background:#171c29;font-size:9px}
+.github-live-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #222737;color:#929bb1;min-width:0}
+.github-live-row>svg{flex-shrink:0;color:#9b8be5}
+.github-live-row>svg:last-child{color:#656e83}
+.github-live-row:hover strong{color:#c5b4ff}
+.github-live-row-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.github-live-row-copy strong{font-size:10px;line-height:1.4;font-weight:600;color:#d7d9e7;overflow-wrap:anywhere}
+.github-live-row-copy small{font-size:9px;color:#778198;overflow-wrap:anywhere}
+.github-run-dot{height:7px;width:7px;border-radius:50%;flex-shrink:0;background:#8b94a9}
+.github-run-dot.run-success,.github-run-dot.run-successfully{background:#56d6a0;box-shadow:0 0 7px #56d6a044}
+.github-run-dot.run-failure,.github-run-dot.run-cancelled,.github-run-dot.run-timed_out,.github-run-dot.run-action_required{background:#ff7d91;box-shadow:0 0 7px #ff7d9144}
+.github-run-dot.run-in_progress,.github-run-dot.run-queued,.github-run-dot.run-requested,.github-run-dot.run-waiting{background:#e7be69;box-shadow:0 0 7px #e7be6944}
+.github-live-muted,.github-live-error{font-size:10px;line-height:1.5;margin:8px 0;color:#828ba2;overflow-wrap:anywhere}
+.github-live-error{padding:8px;border:1px solid #573541;background:#27191f;color:#ffb6c2;border-radius:6px}
+.github-live-updated{margin:10px 0 0;font-size:9px;color:#687187}
+@media(max-width:760px){.github-live-section{padding:10px}.github-live-row-copy strong{font-size:10px}}
