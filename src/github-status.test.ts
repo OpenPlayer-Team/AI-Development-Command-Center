@@ -28,6 +28,16 @@ const pullRequests = [
   },
 ];
 
+const agentIssues = [
+  {
+    number: 42,
+    title: 'Implement the local agent runner',
+    html_url: 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/issues/42',
+    labels: [{ name: 'agent-task' }, { name: 'priority:high' }],
+    updated_at: '2026-10-24T18:00:00Z',
+  },
+];
+
 const workflowRuns = {
   workflow_runs: [
     {
@@ -52,6 +62,7 @@ describe('fetchGitHubStatus', () => {
     const mockFetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
       return jsonResponse(repository);
     });
@@ -70,6 +81,11 @@ describe('fetchGitHubStatus', () => {
       headBranch: 'feat/phase-1-dashboard-foundation',
       draft: false,
     });
+    expect(result.openAgentTasks[0]).toMatchObject({
+      number: 42,
+      title: 'Implement the local agent runner',
+      labels: ['agent-task', 'priority:high'],
+    });
     expect(result.recentWorkflowRuns[0]).toMatchObject({
       id: 100,
       name: 'CI',
@@ -77,7 +93,7 @@ describe('fetchGitHubStatus', () => {
       conclusion: 'success',
     });
     expect(result.fetchedAt).toMatch(/^\d{4}-\d\d-\d\dT/);
-    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
     for (const [input, init] of mockFetch.mock.calls) {
       expect(String(input)).toMatch(/^https:\/\/api\.github\.com\//);
       expect(init?.method).toBe('GET');
@@ -89,6 +105,7 @@ describe('fetchGitHubStatus', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse([]);
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse([]);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse({ workflow_runs: [] });
       return jsonResponse({ ...repository, private: true, visibility: 'private' });
     }));
@@ -112,6 +129,7 @@ describe('fetchGitHubStatus', () => {
       if (url.endsWith('/pulls?state=open&per_page=5')) {
         return jsonResponse([{ ...pullRequests[0], html_url: 'https://evil.example/steal' }]);
       }
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
       return jsonResponse(repository);
     }));
