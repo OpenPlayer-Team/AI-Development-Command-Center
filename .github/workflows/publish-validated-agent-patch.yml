@@ -1,0 +1,186 @@
+name: Publish validated AI patch as a pull request
+
+on:
+  workflow_run:
+    workflows: ["Local AI patch proposal"]
+    types: [completed]
+
+# A successful proposal run may produce a reviewed PR, never an automatic merge.
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: publish-ai-patch-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.path == '.github/workflows/local-agent-patch-proposal.yml' &&
+          github.event.workflow_run.head_branch == github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download artifact from the successful proposal run
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: incoming
+
+      - name: Check out the exact source commit without persistent credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate patch boundaries and apply to temporary workspace
+        id: validate
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          artifacts=(incoming/local-agent-patch-proposal-*)
+          if (( ${#artifacts[@]} != 1 )); then
+            echo "::error::Expected exactly one local-agent-patch-proposal artifact."
+            exit 1
+          fi
+          artifact_dir="${artifacts[0]}"
+          artifact_name="${artifact_dir##*/}"
+          [[ "$artifact_name" =~ ^local-agent-patch-proposal-([1-9][0-9]*)$ ]] || {
+            echo "::error::Unexpected artifact name."; exit 1;
+          }
+          issue_number="${BASH_REMATCH[1]}"
+          patch="$artifact_dir/proposal.patch"
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+
+          if [[ ! -s "$patch" ]]; then
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## AI patch publication"
+              echo
+              echo "The model declined to propose a patch. No pull request was created."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          bytes=$(wc -c < "$patch")
+          (( bytes <= 200000 )) || { echo "::error::Patch exceeds 200 KB."; exit 1; }
+          grep -q '^diff --git ' "$patch" || { echo "::error::Not a unified git diff."; exit 1; }
+          if grep -Eq '^(old mode|new mode|new file mode 120000|deleted file mode 120000|rename from|rename to|copy from|copy to|GIT binary patch|Binary files)' "$patch"; then
+            echo "::error::Mode changes, symlinks, renames, copies, and binary patches are not allowed."
+            exit 1
+          fi
+
+          git apply --numstat "$patch" > "$RUNNER_TEMP/patch-numstat.txt"
+          count=0
+          changed_lines=0
+          while IFS=$'\t' read -r added deleted path; do
+            [[ -n "${path:-}" ]] || { echo "::error::Could not parse a changed path."; exit 1; }
+            [[ "$added" =~ ^[0-9]+$ && "$deleted" =~ ^[0-9]+$ ]] || {
+              echo "::error::Binary or unparseable file changes are not allowed."; exit 1;
+            }
+            case "$path" in
+              src/*)
+                case "$path" in
+                  *.test.*|*.spec.*|*__tests__*|src/../*|src//*)
+                    echo "::error::Tests and unusual paths are outside the allowed edit scope: $path"
+                    exit 1
+                    ;;
+                esac
+                ;;
+              docs/*|README.md) ;;
+              *)
+                echo "::error::Path is outside the allowed scope (src/, docs/, README.md): $path"
+                exit 1
+                ;;
+            esac
+            count=$((count + 1))
+            changed_lines=$((changed_lines + added + deleted))
+          done < "$RUNNER_TEMP/patch-numstat.txt"
+          (( count > 0 && count <= 12 )) || { echo "::error::Patch must touch 1–12 files."; exit 1; }
+          (( changed_lines <= 1000 )) || { echo "::error::Patch exceeds 1000 changed lines."; exit 1; }
+
+          git apply --check "$patch"
+          git apply "$patch"
+          git diff --check
+          echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          echo "changed_files=$count" >> "$GITHUB_OUTPUT"
+          echo "changed_lines=$changed_lines" >> "$GITHUB_OUTPUT"
+          {
+            echo "## AI patch publication"
+            echo
+            echo "- Source issue: #$issue_number"
+            echo "- Source run: $SOURCE_RUN_ID"
+            echo "- Allowed scope checked: `src/`, `docs/`, `README.md` (tests, workflows, dependencies, and lockfiles excluded)."
+            echo "- Bounds: $count files, $changed_lines changed lines."
+            echo "- Patch applied only to a temporary hosted workspace; review is still required."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit and push proposal branch
+        if: steps.validate.outputs.has_patch == 'true'
+        id: publish_branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ISSUE_NUMBER: ${{ steps.validate.outputs.issue_number }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          branch="ai/issue-${ISSUE_NUMBER}-run-${SOURCE_RUN_ID}"
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --base "$DEFAULT_BRANCH" --json url --jq '.[0].url // ""')
+          if [[ -n "$existing_pr" ]]; then
+            echo "A pull request already exists: $existing_pr"
+            echo "existing_pr=$existing_pr" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          remote_branch=$(git ls-remote --heads origin "refs/heads/$branch")
+          if [[ -n "$remote_branch" ]]; then
+            echo "::error::The proposal branch already exists without a matching PR; refusing to overwrite it."
+            exit 1
+          fi
+
+          git switch -c "$branch"
+          git add -- src docs README.md
+          git diff --cached --check
+          git diff --cached --quiet && { echo "::error::Validated patch produced no tracked changes."; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "ai: validated proposal for issue #$ISSUE_NUMBER"
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c http.extraheader="$auth_header" push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request for human review
+        if: steps.validate.outputs.has_patch == 'true' && steps.publish_branch.outputs.branch != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ISSUE_NUMBER: ${{ steps.validate.outputs.issue_number }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          PROPOSAL_BRANCH: ${{ steps.publish_branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$PROPOSAL_BRANCH" \
+            --base "$DEFAULT_BRANCH" \
+            --title "AI proposal for issue #$ISSUE_NUMBER" \
+            --body "## AI-generated patch proposal
+
+          - Source task: https://github.com/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER
+          - Proposal and isolated test run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID
+          - This branch was generated from a local Ollama proposal and passed the workflow's configured test/build steps before publication.
+          - The publisher restricts changes to `src/`, `docs/`, and `README.md`; project tests, GitHub workflows, dependency manifests, and lockfiles are excluded.
+          - A passing test/build does not guarantee correctness or security. Review all changes and CI results.
+
+          **Human review required. This workflow never merges the pull request.**"
