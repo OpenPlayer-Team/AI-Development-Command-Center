@@ -48,6 +48,7 @@
 - [x] Run all tests and production build on implementation revision `20c72c48ace7dd736fdfe934fee0caf677b528ee` (repeat before release)
 - [ ] Configure GitHub Pages and verify deployment
 - [x] Commit package lockfile and use reproducible dependency installation via `npm ci`
+- [x] Fail CI closed on npm audit high/critical findings or unusable audit output, with tests for pass/fail policy cases
 - [ ] Document limitations, quotas, and operational procedures
 
 A checklist item is complete only when implementation or verification evidence exists. A workflow file is not considered operationally verified until an actual run has been inspected.

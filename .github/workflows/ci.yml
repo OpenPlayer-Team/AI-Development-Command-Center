@@ -38,39 +38,13 @@ jobs:
           npm audit --audit-level=high --json > "$AUDIT_REPORT"
           audit_exit=$?
           set -e
-          export AUDIT_EXIT="$audit_exit"
-          node --input-type=commonjs <<'NODE'
-          const fs = require('node:fs');
-          const report = JSON.parse(fs.readFileSync(process.env.AUDIT_REPORT, 'utf8'));
-          const counts = report.metadata?.vulnerabilities;
-          if (!counts) {
-            console.error('npm audit did not return dependency vulnerability metadata.');
-            process.exit(2);
-          }
-          console.log('npm audit severity totals:', JSON.stringify(counts));
-          for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
-            console.log(JSON.stringify({
-              package: name,
-              severity: item.severity,
-              direct: item.isDirect,
-              range: item.range,
-              fixAvailable: item.fixAvailable,
-              via: item.via.map(v => typeof v === 'string' ? v : ({ name: v.name, title: v.title, range: v.range, url: v.url }))
-            }));
-          }
-          if ((counts.high ?? 0) > 0 || (counts.critical ?? 0) > 0) {
-            console.error('npm audit policy failed: high/critical vulnerabilities are not allowed in CI.');
-            process.exit(1);
-          }
-          if (process.env.AUDIT_EXIT !== '0') {
-            console.error('npm audit did not complete successfully; failing closed.');
-            process.exit(2);
-          }
-          NODE
+          node scripts/check-npm-audit.mjs "$AUDIT_REPORT" "$audit_exit"
       - name: Lint GitHub Actions workflow files
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Test AI patch publisher policy
         run: bash scripts/test-validate-agent-patch.sh
+      - name: Test npm audit gate policy
+        run: node scripts/test-check-npm-audit.mjs
       - name: Test local agent-context secret redaction
         run: node scripts/test-redact-agent-context.mjs
       - name: Run tests
