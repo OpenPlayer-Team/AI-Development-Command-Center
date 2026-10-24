@@ -94,7 +94,12 @@ function parseRepository(value: unknown): RepositorySummary {
   const raw = asRecord(value, 'repository');
   const isPrivate = raw.private === true;
   const rawVisibility = typeof raw.visibility === 'string' ? raw.visibility : isPrivate ? 'private' : 'public';
-  const visibility = rawVisibility === 'private' || rawVisibility === 'internal' ? rawVisibility : 'public';
+  const visibility: RepositorySummary['visibility'] =
+    rawVisibility === 'private' || rawVisibility === 'internal' || rawVisibility === 'public'
+      ? rawVisibility
+      : isPrivate
+        ? 'private'
+        : 'public';
 
   return {
     fullName: asString(raw.full_name, 'repository name'),
