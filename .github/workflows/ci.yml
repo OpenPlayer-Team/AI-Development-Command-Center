@@ -31,11 +31,13 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Audit dependencies (diagnostic)
         shell: bash
+        env:
+          AUDIT_REPORT: ${{ runner.temp }}/npm-audit-report.json
         run: |
-          npm audit --json > npm-audit-report.json || true
+          npm audit --json > "$AUDIT_REPORT" || true
           node --input-type=commonjs <<'NODE'
           const fs = require('node:fs');
-          const report = JSON.parse(fs.readFileSync('npm-audit-report.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync(process.env.AUDIT_REPORT, 'utf8'));
           const counts = report.metadata?.vulnerabilities ?? {};
           console.log('npm audit severity totals:', JSON.stringify(counts));
           for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
