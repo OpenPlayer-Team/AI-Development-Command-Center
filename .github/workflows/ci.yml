@@ -49,6 +49,8 @@ jobs:
             }));
           }
           NODE
+      - name: Test AI patch publisher policy
+        run: bash scripts/test-validate-agent-patch.sh
       - name: Run tests
         run: npm test
       - name: Build production bundle
