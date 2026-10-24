@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.GITHUB_ACTIONS ? '/AI-Development-Command-Center/' : '/',
+  base: process.env.GITHUB_ACTIONS === 'true' ? '/AI-Development-Command-Center/' : '/',
   test: {
     environment: 'jsdom',
     globals: true,
