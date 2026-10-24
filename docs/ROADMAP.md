@@ -27,6 +27,7 @@
 - [ ] Define and review a threat model and allowed tool/command policy
 - [x] Add bounded patch generation and test/build validation in an ephemeral GitHub-hosted runner (workflow still requires an operational self-hosted Ollama runner)
 - [x] Add a publisher workflow that opens a restricted-scope PR only after successful validation; it never merges
+- [x] Extract patch boundary policy into a reusable validator and cover accepted/rejected cases in CI
 - [ ] Run the local proposal → validation → PR path end-to-end on a dedicated isolated runner
 - [ ] Define and review a threat model and allowed tool/command policy
 - [ ] Keep untrusted task/repository content isolated from secrets
