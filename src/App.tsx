@@ -293,11 +293,11 @@ function MetricCard({ label, value, caption, icon, tone, trend }: { label: strin
   return <div className="metric-card"><div className="metric-top"><span>{label}</span><span className={`metric-icon tone-${tone}`}>{icon}</span></div><div className="metric-value">{value}</div><div className="metric-bottom"><span>{caption}</span><span className="metric-trend">{trend}</span></div></div>;
 }
 
-function AgentRow({ icon, name, description, color, status }: { icon: React.ReactNode; name: string; description: string; color: string; status: string }) {
+function AgentRow({ icon, name, description, color, status }: { icon: ReactNode; name: string; description: string; color: string; status: string }) {
   return <div className="agent-row"><span className={`agent-icon agent-${color}`}>{icon}</span><div className="agent-copy"><strong>{name}</strong><small>{description}</small></div><span className={status === 'Designed' ? 'agent-status designed' : 'agent-status'}>{status}</span></div>;
 }
 
-function ActivityRow({ icon, color, title, detail, time }: { icon: React.ReactNode; color: string; title: string; detail: string; time: string }) {
+function ActivityRow({ icon, color, title, detail, time }: { icon: ReactNode; color: string; title: string; detail: string; time: string }) {
   return <div className="activity-row"><span className={`activity-icon activity-${color}`}>{icon}</span><div className="activity-copy"><strong>{title}</strong><small>{detail}</small></div><span className="activity-time">{time}</span></div>;
 }
 
