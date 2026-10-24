@@ -217,6 +217,9 @@ function App() {
                   </div>
                   {githubStatusLoading && !githubStatus && <p className="github-live-muted">Loading public repository data…</p>}
                   {githubStatusError && <p className="github-live-error" role="status">{githubStatusError}</p>}
+                  {githubStatus && githubStatus.warnings.length > 0 && (
+                    <p className="github-live-warning" role="status">{githubStatus.warnings.join(' ')}</p>
+                  )}
                   {githubStatus && (
                     <>
                       <div className="github-live-group">
