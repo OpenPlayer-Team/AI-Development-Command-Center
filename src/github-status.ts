@@ -41,6 +41,7 @@ export interface GitHubLiveStatus {
   openPullRequests: PullRequestSummary[];
   openAgentTasks: AgentIssueSummary[];
   recentWorkflowRuns: WorkflowRunSummary[];
+  warnings: string[];
   fetchedAt: string;
 }
 
@@ -185,23 +186,78 @@ function parseWorkflowRuns(value: unknown): WorkflowRunSummary[] {
  * It deliberately uses no credential and grants the browser no write capability.
  * Private repositories and anonymous API rate limits are surfaced as a display error.
  */
+function parseOptionalResult<T>(
+  result: PromiseSettledResult<unknown>,
+  label: string,
+  parser: (value: unknown) => T,
+  fallback: T,
+  warnings: string[],
+): T {
+  if (result.status === 'rejected') {
+    warnings.push(label);
+    return fallback;
+  }
+
+  try {
+    return parser(result.value);
+  } catch {
+    warnings.push(label);
+    return fallback;
+  }
+}
+
+/**
+ * Reads public repository metadata, open pull requests, open agent-task issues,
+ * and recent Actions runs without credentials or write capability.
+ * Repository metadata is required; secondary panels degrade independently.
+ */
 export async function fetchGitHubStatus(signal?: AbortSignal): Promise<GitHubLiveStatus> {
   const encodedOwner = encodeURIComponent(OWNER);
   const encodedRepository = encodeURIComponent(REPOSITORY);
   const base = `/repos/${encodedOwner}/${encodedRepository}`;
 
-  const [repository, pullRequests, agentIssues, workflowRuns] = await Promise.all([
+  const [repositoryResult, pullRequestsResult, agentIssuesResult, workflowRunsResult] = await Promise.allSettled([
     getJson(base, signal),
     getJson(`${base}/pulls?state=open&per_page=5`, signal),
     getJson(`${base}/issues?state=open&labels=agent-task&per_page=5`, signal),
     getJson(`${base}/actions/runs?per_page=3`, signal),
   ]);
 
+  if (signal?.aborted) {
+    throw repositoryResult.status === 'rejected' ? repositoryResult.reason : new Error('GitHub request aborted.');
+  }
+  if (repositoryResult.status === 'rejected') throw repositoryResult.reason;
+
+  const warnings: string[] = [];
+  const parsedRepository = parseRepository(repositoryResult.value);
+  const openPullRequests = parseOptionalResult(
+    pullRequestsResult,
+    'Open pull requests could not be loaded.',
+    parsePullRequests,
+    [],
+    warnings,
+  );
+  const openAgentTasks = parseOptionalResult(
+    agentIssuesResult,
+    'Agent tasks could not be loaded.',
+    parseAgentIssues,
+    [],
+    warnings,
+  );
+  const recentWorkflowRuns = parseOptionalResult(
+    workflowRunsResult,
+    'Recent workflow runs could not be loaded.',
+    parseWorkflowRuns,
+    [],
+    warnings,
+  );
+
   return {
-    repository: parseRepository(repository),
-    openPullRequests: parsePullRequests(pullRequests),
-    openAgentTasks: parseAgentIssues(agentIssues),
-    recentWorkflowRuns: parseWorkflowRuns(workflowRuns),
+    repository: parsedRepository,
+    openPullRequests,
+    openAgentTasks,
+    recentWorkflowRuns,
+    warnings,
     fetchedAt: new Date().toISOString(),
   };
 }
