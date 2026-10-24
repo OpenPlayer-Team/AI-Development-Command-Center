@@ -58,4 +58,18 @@ expect_reject "dependency manifest modification" "$tmp/package-manifest.patch"
 make_patch documentation-text docs/README.md
 PATCH_REPO_ROOT="$fixture" bash "$validator" "$tmp/documentation-text.patch"
 
+# Size limits are checked before attempting to parse a patch.
+dd if=/dev/zero of="$tmp/oversized.patch" bs=200001 count=1 status=none
+expect_reject "oversized patch" "$tmp/oversized.patch"
+
+cat > "$tmp/path-traversal.patch" <<'PATCH'
+diff --git a/src/../README.md b/src/../README.md
+--- a/src/../README.md
++++ b/src/../README.md
+@@ -1 +1 @@
+-# Project
++# Changed
+PATCH
+expect_reject "path traversal" "$tmp/path-traversal.patch"
+
 echo "All patch policy tests passed."
