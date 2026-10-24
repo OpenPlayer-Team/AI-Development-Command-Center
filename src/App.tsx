@@ -26,8 +26,8 @@ function formatTimestamp(value: string): string {
 }
 
 function workflowRunLabel(status: string, conclusion: string | null): string {
-  if (status !== 'completed') return status.replaceAll('_', ' ');
-  return conclusion ? conclusion.replaceAll('_', ' ') : 'completed';
+  if (status !== 'completed') return status.replace(/_/g, ' ');
+  return conclusion ? conclusion.replace(/_/g, ' ') : 'completed';
 }
 
 function App() {
