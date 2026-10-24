@@ -99,7 +99,7 @@ function App() {
             <div>
               <div className="eyebrow"><span className="eyebrow-line" /> YOUR SOFTWARE WORKSPACE</div>
               <h1>Build something <span>extraordinary.</span></h1>
-              <p className="welcome-subtitle">Your development command center. One place to plan, build, test, and review.</p>
+              <p className="welcome-subtitle">Your development command center. One place to plan, build, test, and review.</p><a className="durable-task-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml" target="_blank" rel="noreferrer">Create a durable GitHub task <ArrowUpRight size={14} /></a>
             </div>
             <button className="primary-button" onClick={() => setShowComposer((open) => !open)}><Plus size={17} /> New task</button>
           </section>
@@ -112,12 +112,12 @@ function App() {
 
           {showComposer && (
             <section className="composer-panel">
-              <div className="composer-heading"><div className="composer-icon"><MessageSquare size={18} /></div><div><strong>What should we work on?</strong><p>Create a task in this demo dashboard.</p></div></div>
+              <div className="composer-heading"><div className="composer-icon"><MessageSquare size={18} /></div><div><strong>What should we work on?</strong><p>This quick form is a local preview only. Use the GitHub workflow to save a durable task.</p></div></div>
               <form onSubmit={submitTask} className="task-form">
                 <input autoFocus value={taskInput} onChange={(event) => setTaskInput(event.target.value)} placeholder="e.g. Add authentication tests to my repository…" aria-label="New task description" />
                 <button className="primary-button" type="submit" disabled={!taskInput.trim()}><Send size={15} /> Add task</button>
               </form>
-              <p className="composer-footnote"><Sparkles size={13} /> This records a task in browser memory only; it does not execute code or call an AI.</p>
+              <p className="composer-footnote"><Sparkles size={13} /> Demo-only: browser memory, no code execution or AI call. <a href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml" target="_blank" rel="noreferrer">Open durable task intake <ArrowUpRight size={12} /></a></p>
             </section>
           )}
 
