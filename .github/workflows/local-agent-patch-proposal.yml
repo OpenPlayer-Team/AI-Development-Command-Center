@@ -76,6 +76,11 @@ jobs:
           set -euo pipefail
           context="$RUNNER_TEMP/agent-source-context.txt"
           : > "$context"
+          # Redact issue text before any part of it is sent to the local model.
+          for input_file in "$RUNNER_TEMP/issue-title.txt" "$RUNNER_TEMP/issue-body.txt"; do
+            node scripts/redact-agent-context.mjs "$input_file" > "$input_file.redacted"
+            mv "$input_file.redacted" "$input_file"
+          done
           total=0
           # Only tracked text-like source/docs/config files. Never include hidden files,
           # env files, credentials, lockfiles, binaries, or GitHub workflow definitions.
@@ -94,7 +99,7 @@ jobs:
             (( total + size <= 60000 )) || break
             {
               printf '\n\n===== FILE: %s =====\n' "$file"
-              cat -- "$file"
+              node scripts/redact-agent-context.mjs "$file"
             } >> "$context"
             total=$((total + size))
           done < <(git ls-files)

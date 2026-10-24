@@ -32,7 +32,8 @@
 - [x] Add a publisher workflow that opens a restricted-scope PR only after successful validation; it never merges
 - [x] Extract patch boundary policy into a reusable validator and cover accepted/rejected cases in CI
 - [ ] Run the local proposal → validation → PR path end-to-end on a dedicated isolated runner
-- [ ] Further harden against committed-secret leakage in bounded source context; no GitHub token is passed to the local model step
+- [x] Add best-effort redaction for common token, key, password, bearer, URL-credential, and private-key patterns in issue/source context
+- [ ] Add a dedicated secret scanner and review redaction false positives/negatives; regex redaction cannot guarantee all secrets are removed
 - [ ] Require explicit human review and approval before merging any agent PR
 
 ## Phase 4 — Provider routing and local fallback
