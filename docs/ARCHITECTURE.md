@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-The current branch contains a React + TypeScript + Vite static dashboard. Task creation and search use browser-only demo state; initial task rows are illustrative and are not proof of AI work. A read-only client now fetches public repository metadata, open pull requests, open issues labelled `agent-task`, and recent Actions runs from the unauthenticated GitHub REST API. It uses GET requests only, stores no access token, and cannot read private-repository data.
+The current branch contains a React + TypeScript + Vite static dashboard. The Overview's quick composer and sample task rows use browser-only demo state; they are not proof of AI work. Sidebar navigation opens dedicated task queue, agent workspace, GitHub activity, pull-request review, workflow, terminal-log guidance, and settings views. The queue, PR, and workflow views use anonymous read-only GitHub metadata and link to the real records; sidebar counts use live open GitHub issue/PR counts when available. The client stores no access token and cannot read private-repository data.
 
 ## Target architecture
 
@@ -15,7 +15,7 @@ The current branch contains a React + TypeScript + Vite static dashboard. Task c
 
 ## Dependency security verification
 
-A prior CI dependency audit reported 6 findings before the Vite/Vitest upgrade (3 moderate, 1 high, 2 critical). On an upgraded branch revision, `npm audit` reported **0 vulnerabilities**; all 3 then-existing unit tests and the production build passed in GitHub Actions. Re-run CI and the audit after future dependency changes; this is not a claim about the latest commit until its CI run completes.
+On commit `e121ddd37a62b0f97f2661e156118ef91195eb93` (2026-10-24), GitHub Actions completed successfully: workflow lint, patch-policy tests, **12 unit tests**, and the production build passed; the diagnostic `npm audit` reported **0 vulnerabilities**. Re-run CI and the audit after future dependency changes. These results apply to that exact commit.
 
 ## Safety requirements
 
@@ -31,8 +31,8 @@ A prior CI dependency audit reported 6 findings before the Vite/Vitest upgrade (
 ## Current limitations
 
 - The dashboard's local composer is demo-only; durable tasks are created through the manual task-intake workflow and stored as GitHub Issues. The dashboard can display public issues labelled `agent-task`, open PRs, and recent workflow runs. The live reader is anonymous and read-only; a private repository or API rate limit results in an explicit error rather than requesting a token.
-- The local Ollama workflow generates a planning artifact only. It does not edit code, execute tests, create a branch, or open a PR.
+- `local-agent-plan.yml` generates a planning artifact only; it does not edit code, execute tests, create a branch, or open a PR. The separate `local-agent-patch-proposal.yml` can propose a bounded diff and test/build it on an ephemeral hosted runner, after which `publish-validated-agent-patch.yml` may open a restricted-scope PR. The local Ollama runner and the proposal → validation → publication path have not been end-to-end verified.
 - The local planning workflow requires a configured self-hosted runner labelled `ai-agent`, Ollama, and the repository variable `OLLAMA_MODEL`. It has not been end-to-end verified until a real run is inspected.
 - GitHub Actions workflow dispatch generally requires the workflow to be present on the default branch. Keep the feature PR open until the user explicitly approves merging.
 - GitHub Pages deployment requires the appropriate repository Pages configuration.
-- The current CI workflow uses npm install without a committed package lockfile, so dependency resolution is not yet fully reproducible. A lockfile should be committed before release.
+- `package-lock.json` is committed and CI, Pages, and hosted patch validation use `npm ci`; patch validation also disables lifecycle scripts with `--ignore-scripts`. This makes dependency installation reproducible for the committed lockfile, but does not eliminate upstream dependency or GitHub Action supply-chain risk.
