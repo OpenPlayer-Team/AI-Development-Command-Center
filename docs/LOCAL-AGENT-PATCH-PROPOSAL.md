@@ -26,8 +26,10 @@ Do not register a personal daily-use workstation as this runner. Use a disposabl
 - Checkout does not persist the GitHub token in Git configuration.
 - It passes a bounded selection of tracked text files to the local model; context is incomplete by design.
 - It excludes hidden files, `.env` files, lockfiles, likely secret/credential filenames, and workflow files.
-- `git apply --check` checks only whether the proposed diff applies cleanly. It does not prove correctness or safety.
-- It does not apply the patch, run generated code, run tests, commit, push, create a branch, open a PR, or merge.
+- `git apply --check` on the local runner checks only whether the proposed diff applies cleanly. It does not prove correctness or safety.
+- A separate ephemeral GitHub-hosted runner downloads the artifact, checks out the matching source, applies the proposal only in its temporary workspace, installs dependencies with lifecycle scripts disabled, then runs `npm test` and `npm run build` when a patch exists.
+- The hosted validation job has read-only repository permission, does not persist checkout credentials, and does not commit, push, create a branch, open a PR, or merge.
+- The test/build job executes proposed project code. Its isolation depends on GitHub-hosted runner disposal and must never be replaced with a persistent self-hosted runner.
 - The artifact may contain source snippets and task text. Treat it as repository data and retain it only as long as needed.
 - Never regard a model-generated patch as trusted. Human review and separate tests are required.
 
