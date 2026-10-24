@@ -1,0 +1,49 @@
+name: Bootstrap package lockfile artifact
+
+on:
+  push:
+    branches:
+      - "feat/**"
+    paths:
+      - ".github/workflows/bootstrap-lockfile.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate reproducible npm lock metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Generate lockfile without running lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Record generator versions
+        run: |
+          {
+            echo "## Lockfile generator"
+            echo
+            echo "- Node: $(node --version)"
+            echo "- npm: $(npm --version)"
+            echo "- Package manifest SHA-256: $(sha256sum package.json | cut -d ' ' -f 1)"
+            echo "- Package lock generated with lifecycle scripts disabled."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload lockfile for review and commit
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
