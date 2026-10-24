@@ -109,7 +109,6 @@ jobs:
           existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --base "$DEFAULT_BRANCH" --json url --jq '.[0].url // ""')
           if [[ -n "$existing_pr" ]]; then
             echo "A pull request already exists: $existing_pr"
-            echo "existing_pr=$existing_pr" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           remote_branch=$(git ls-remote --heads origin "refs/heads/$branch")
