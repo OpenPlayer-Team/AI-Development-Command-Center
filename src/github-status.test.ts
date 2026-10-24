@@ -86,14 +86,17 @@ describe('fetchGitHubStatus', () => {
   });
 
   it('preserves private visibility reported by the API', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({
-      ...repository,
-      private: true,
-      visibility: 'private',
-    })));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse([]);
+      if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse({ workflow_runs: [] });
+      return jsonResponse({ ...repository, private: true, visibility: 'private' });
+    }));
 
     await expect(fetchGitHubStatus()).resolves.toMatchObject({
       repository: { visibility: 'private' },
+      openPullRequests: [],
+      recentWorkflowRuns: [],
     });
   });
 
