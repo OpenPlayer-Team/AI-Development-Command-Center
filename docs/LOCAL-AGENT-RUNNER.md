@@ -36,10 +36,11 @@ A passing health check establishes only that the CLI/API and configured model ar
 1. Review and merge the feature PR only after inspecting its diffs and CI results.
 2. Register and validate the isolated self-hosted runner.
 3. Install Ollama and download the selected model, then set `OLLAMA_MODEL`.
-4. In **Settings → Actions → General**, enable GitHub Actions to create pull requests if the publisher is expected to open PRs.
-5. Create an issue with clear acceptance criteria and the `agent-task` label. The task-intake workflow creates this label when necessary.
-6. Open **Actions → Local AI patch proposal → Run workflow**, select the default branch, enter the open issue number, and start the run.
-7. Inspect the plan/proposal artifact, the hosted validation job, and any resulting pull request. Review the entire diff and its CI results before merging manually.
+4. Run **Actions → Local Ollama runner health** and require a passing health summary before using the provider.
+5. In **Settings → Actions → General**, enable GitHub Actions to create pull requests if the publisher is expected to open PRs.
+6. Create an issue with clear acceptance criteria and the `agent-task` label. The task-intake workflow creates this label when necessary.
+7. Open **Actions → Local AI patch proposal → Run workflow**, select the default branch, enter the open issue number, and start the run.
+8. Inspect the plan/proposal artifact, the hosted validation job, and any resulting pull request. Review the entire diff and its CI results before merging manually.
 
 ## Security boundaries
 

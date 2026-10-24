@@ -5,7 +5,7 @@
 - [x] Dashboard UI and local task composer
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
-- [x] CI run on commit `20c72c48ace7dd736fdfe934fee0caf677b528ee` passed workflow lint, patch-policy tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
+- [x] CI on commit `eb4ccfb1b818c85fd83c471c17b6497babbb4dbf` passed workflow lint, patch-policy tests, npm-audit gate tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
 - [x] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
@@ -30,7 +30,7 @@
 - [x] Document the initial threat model and command boundaries in `docs/THREAT-MODEL.md`
 - [ ] Independently review the threat model and command policy
 - [x] Add bounded patch generation and test/build validation in an ephemeral GitHub-hosted runner (workflow still requires an operational self-hosted Ollama runner)
-- [x] Add a publisher workflow that opens a restricted-scope PR only after successful validation; it never merges
+- [x] Split publisher into read-only validation and write-enabled publication jobs; it never merges or runs generated project code with write permissions
 - [x] Extract patch boundary policy into a reusable validator and cover accepted/rejected cases in CI
 - [ ] Run the local proposal → validation → PR path end-to-end on a dedicated isolated runner
 - [x] Add best-effort redaction for common service tokens, key/password assignments, bearer tokens, credential URLs, JWT-like strings, and PEM private keys in planner issue input, planner output, and patch-proposal context

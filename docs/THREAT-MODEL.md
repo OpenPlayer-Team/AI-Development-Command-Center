@@ -59,8 +59,9 @@ Security goals:
 ### 5. Pull-request publisher
 
 - The publisher accepts only a successful manually dispatched proposal run from this repository's default branch and requires the run to come from the expected workflow path.
-- It rechecks the issue is open and labelled `agent-task`, validates the patch allowlist again, and applies it in a temporary hosted workspace.
-- It has write permissions because it pushes a separate proposal branch and opens a pull request. This is a sensitive capability. Its job does not invoke the model or run project tests with those write permissions; test/build are performed in the preceding read-only job.
+- Its first job has only `actions: read`, `contents: read`, and `issues: read`; it verifies the source run and task Issue, rejects secret-like output, validates patch boundaries, applies the patch in a temporary workspace, and uploads only the validated patch with a one-day retention.
+- A second job has the `contents` and `pull-requests` write permissions needed to publish. It rechecks Issue eligibility, fetches the public source anonymously, revalidates the patch, and applies it in a temporary workspace. It does not invoke the model or execute generated project code.
+- `GH_TOKEN` is scoped to Issue-lookup and branch/PR steps, not the patch-validation/apply steps. Git push uses a one-command HTTP extra header rather than persisting credentials.
 - It never merges. Human review of the complete diff and the PR's own CI checks remains mandatory.
 - Repository settings must explicitly allow Actions to create pull requests. Keep branch protection/rulesets enabled where available.
 

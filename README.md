@@ -58,7 +58,7 @@ Task composer entries and the illustrative task rows are still demo-only. The da
 
 ### Phase 5: publish a validated proposal as a pull request
 
-The `.github/workflows/publish-validated-agent-patch.yml` workflow listens for a successful **Local AI patch proposal** run on the repository's default branch. When the patch exists and the isolated tests/build succeeded, it creates a separate `ai/issue-N-run-ID` branch and opens a pull request for review.
+The `.github/workflows/publish-validated-agent-patch.yml` workflow listens for a successful **Local AI patch proposal** run on the repository's default branch. A read-only job checks the source run, Issue status/label, secret-like output, patch boundary, and applicability, then uploads a short-lived validated patch artifact. A separate publisher job rechecks the Issue, fetches the public source anonymously, and revalidates/applies the patch without `GH_TOKEN`. The token is scoped to Issue lookup and branch/PR steps; no generated project code is executed in the write-permission job.
 
 The publisher accepts changes only under `src/`, `docs/`, or `README.md`; it rejects test files, workflow files, dependency manifests, lockfiles, binary patches, path traversal, and oversized diffs. It never merges. The generated PR and its CI results must still be reviewed manually.
 
@@ -76,7 +76,7 @@ npm run build
 npm audit
 ```
 
-The CI workflow runs actionlint, patch-policy tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings or an unusable audit result; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
+The CI workflow runs actionlint, patch-policy tests, npm-audit gate tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
 
 ## GitHub deployment
 
