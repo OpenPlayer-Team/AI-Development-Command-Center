@@ -127,7 +127,7 @@ jobs:
           ollama run "$OLLAMA_MODEL" < "$out/prompt.txt" > "$out/proposal.raw"
           if grep -Fxq 'NO_SAFE_PATCH' "$out/proposal.raw"; then
             echo "Model declined to propose a patch from the available context." > "$out/README.txt"
-            cp "$out/proposal.raw" "$out/proposal.txt"
+            : > "$out/proposal.patch"
           else
             # Strip a common accidental markdown fence, then require a valid unified diff.
             sed '/^\x60\x60\x60\(diff\)\?$/d' "$out/proposal.raw" > "$out/proposal.patch"
@@ -167,7 +167,6 @@ jobs:
           path: |
             ${{ runner.temp }}/agent-patch-proposal/proposal.patch
             ${{ runner.temp }}/agent-patch-proposal/README.txt
-            ${{ runner.temp }}/agent-patch-proposal/proposal.txt
           if-no-files-found: error
           retention-days: 7
 
