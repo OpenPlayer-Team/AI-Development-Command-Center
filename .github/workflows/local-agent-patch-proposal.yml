@@ -162,3 +162,69 @@ jobs:
           path: ${{ runner.temp }}/agent-patch-proposal/
           if-no-files-found: error
           retention-days: 7
+
+
+  validate-proposal:
+    name: Test proposed patch in an ephemeral GitHub-hosted runner
+    needs: propose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Download proposal artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: local-agent-patch-proposal-${{ inputs.issue_number }}
+          path: proposal
+
+      - name: Check out matching source without credentials persistence
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Apply proposal only inside disposable hosted workspace
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -s proposal/proposal.patch ]]; then
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            echo "No patch was proposed; skipping test execution."
+            exit 0
+          fi
+          git apply --check proposal/proposal.patch
+          git apply proposal/proposal.patch
+          echo "has_patch=true" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        if: steps.patch.outputs.has_patch == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies without lifecycle scripts
+        if: steps.patch.outputs.has_patch == 'true'
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Run tests against proposed patch
+        if: steps.patch.outputs.has_patch == 'true'
+        run: npm test
+
+      - name: Build proposed patch
+        if: steps.patch.outputs.has_patch == 'true'
+        run: npm run build
+
+      - name: Record validation boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Patch proposal validation"
+            echo
+            echo "- The proposal was applied only in this ephemeral GitHub-hosted workspace."
+            echo "- No generated patch was committed or pushed."
+            echo "- Tests/build are skipped when the model declines or the artifact contains no patch."
+            echo "- Passing tests are evidence for this checkout only, not proof of security or correctness."
+          } >> "$GITHUB_STEP_SUMMARY"
