@@ -49,6 +49,8 @@ jobs:
             }));
           }
           NODE
+      - name: Lint GitHub Actions workflow files
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Test AI patch publisher policy
         run: bash scripts/test-validate-agent-patch.sh
       - name: Run tests
