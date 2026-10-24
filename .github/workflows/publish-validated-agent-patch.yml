@@ -19,8 +19,7 @@ jobs:
   publish:
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.path == '.github/workflows/local-agent-patch-proposal.yml' &&
-          github.event.workflow_run.head_branch == github.event.repository.default_branch }}
+github.event.workflow_run.head_branch == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -186,7 +185,7 @@ jobs:
           - Source task: https://github.com/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER
           - Proposal and isolated test run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID
           - This branch was generated from a local Ollama proposal and passed the workflow's configured test/build steps before publication.
-          - The publisher restricts changes to `src/`, `docs/`, and `README.md`; project tests, GitHub workflows, dependency manifests, and lockfiles are excluded.
+          - The publisher restricts changes to src/, docs/, and README.md; project tests, GitHub workflows, dependency manifests, and lockfiles are excluded.
           - A passing test/build does not guarantee correctness or security. Review all changes and CI results.
 
           **Human review required. This workflow never merges the pull request.**"
