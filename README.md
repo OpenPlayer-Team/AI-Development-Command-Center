@@ -23,7 +23,7 @@ The workflow uses the built-in `GITHUB_TOKEN` with `issues: write`; no personal 
 
 ### Phase 3: local AI planning (planning only)
 
-The `.github/workflows/local-agent-plan.yml` workflow can send an issue to a pre-installed local Ollama model and upload a Markdown plan. It does **not** check out source code, execute model-generated commands, edit files, create a branch, open a PR, or merge anything.
+The `.github/workflows/local-agent-plan.yml` workflow checks out only the redaction utility, validates and redacts the issue title/body, sends the redacted task data to a pre-installed local Ollama model, redacts the generated plan, and uploads that Markdown plan. It does **not** inspect application source, execute model-generated commands, edit files, create a branch, open a PR, or merge anything.
 
 Prerequisites:
 - A dedicated, disposable Linux self-hosted runner registered with labels `self-hosted`, `linux`, and `ai-agent`.

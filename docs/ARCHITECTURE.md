@@ -10,7 +10,7 @@ The current branch contains a React + TypeScript + Vite static dashboard. The Ov
 - **GitHub Pages:** static frontend hosting only; it cannot host a persistent backend or run an AI model.
 - **GitHub Actions:** finite, temporary runners for CI and bounded automation. Free quotas and usage limits apply.
 - **Task queue:** GitHub Issues provide durable task records; browser memory is not persistent.
-- **Local model:** the opt-in planning workflow uses Ollama installed on a dedicated self-hosted Linux runner. It does not check out source code or execute task instructions.
+- **Local model:** the opt-in planning workflow uses Ollama installed on a dedicated self-hosted Linux runner. It checks out only the redaction utility and sends no application source to the model; issue data and plan output receive best-effort redaction. It does not execute task instructions.
 - **Provider policy:** no paid provider is configured. Never assume free cloud model access is unlimited or silently switch to a paid provider.
 
 ## Dependency security verification
