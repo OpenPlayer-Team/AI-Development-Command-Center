@@ -65,7 +65,7 @@ jobs:
           NODE
 
       - name: Checkout source without credentials persistence
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 1
@@ -161,7 +161,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload proposal for human review
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: local-agent-patch-proposal-${{ inputs.issue_number }}
           path: |
@@ -180,13 +180,13 @@ jobs:
       contents: read
     steps:
       - name: Download proposal artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: local-agent-patch-proposal-${{ inputs.issue_number }}
           path: proposal
 
       - name: Check out matching source without credentials persistence
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 1
@@ -208,7 +208,7 @@ jobs:
 
       - name: Set up Node.js
         if: steps.patch.outputs.has_patch == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
 
