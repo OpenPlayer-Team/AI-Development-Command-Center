@@ -267,7 +267,7 @@ function App() {
             </div>
           </section>
 
-          <footer className="app-footer"><span><span className="footer-dot" /> System interface online</span><span>Phase 1 · Dashboard foundation <span className="footer-separator">/</span> Build verification pending</span><span>Made for responsible autonomy <Sparkles size={12} /></span></footer>
+          <footer className="app-footer"><span><span className="footer-dot" /> Interface online</span><span>GitHub status <span className="footer-separator">/</span> Read-only sync, refresh on demand</span><span>Human review before merge <Sparkles size={12} /></span></footer>
         </div>
       </main>
     </div>
