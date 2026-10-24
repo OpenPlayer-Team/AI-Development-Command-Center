@@ -42,7 +42,7 @@ See [local runner setup](docs/LOCAL-AGENT-RUNNER.md) for details. The separate *
 
 ### Phase 4: local AI patch proposal (not applied)
 
-The `.github/workflows/local-agent-patch-proposal.yml` workflow can ask the local Ollama model to propose a unified diff using a bounded source snapshot. It checks that the diff applies cleanly and uploads it for review. A separate ephemeral GitHub-hosted runner applies the proposal only in its temporary workspace and runs project tests/build when a patch exists. **It does not commit, push, open a PR, or merge.**
+The `.github/workflows/local-agent-patch-proposal.yml` workflow can ask the local Ollama model to propose a unified diff using a bounded source snapshot. It checks that the diff applies cleanly and uploads it for review. A separate ephemeral GitHub-hosted runner applies the same strict patch allowlist before testing it in a temporary workspace, then runs project tests/build when a patch exists. **It does not commit, push, open a PR, or merge.**
 
 It requires the same dedicated isolated Linux runner, local Ollama model, and `OLLAMA_MODEL` repository variable described above. The local Ollama generation step has not been end-to-end verified on a configured self-hosted runner. The hosted test job is isolated from that runner and its credentials. Passing tests do not prove correctness or security. `git apply --check` validates applicability only. Review the artifact and run tests separately before using any part of it.
 
@@ -54,7 +54,7 @@ The `.github/workflows/publish-validated-agent-patch.yml` workflow listens for a
 
 The publisher accepts changes only under `src/`, `docs/`, or `README.md`; it rejects test files, workflow files, dependency manifests, lockfiles, binary patches, path traversal, and oversized diffs. It never merges. The generated PR and its CI results must still be reviewed manually.
 
-Before enabling this after merge, go to **Settings → Actions → General** and allow GitHub Actions to create pull requests. The publisher has not been end-to-end tested with the local Ollama runner, so it is an implementation awaiting first operational verification—not a claim of autonomous completion.
+Before enabling this after merge, go to **Settings → Actions → General** and allow GitHub Actions to create pull requests. The publisher has not been end-to-end tested with the local Ollama runner, so it is an implementation awaiting first operational verification—not a claim of autonomous completion. The artifact contains only the patch and review notes, not the model prompt or source-context bundle.
 
 ## Local development
 
