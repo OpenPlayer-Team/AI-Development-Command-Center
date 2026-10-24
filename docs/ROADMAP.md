@@ -13,7 +13,7 @@
 - [x] Define a durable task record using GitHub Issues
 - [x] Add a manual workflow-dispatch task intake with input validation
 - [x] Apply `agent-task` and priority labels; include submitter/source commit
-- [x] Limit workflow token permissions to contents:read and issues:write
+- [x] Least-privilege task intake (`issues: write` only) and preflight (`issues: read` only) token permissions
 - [x] Add anonymous read-only sync for public `agent-task` issues, open pull requests, and recent Actions runs (private repositories need future secure authentication)
 - [x] Add live read-only dashboard status for public repository metadata, open pull requests, and recent Actions runs
 - [x] Add focused review/queue views that link to real GitHub issues and pull requests

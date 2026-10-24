@@ -22,7 +22,6 @@ on:
         default: medium
 
 permissions:
-  contents: read
   issues: write
 
 concurrency:
