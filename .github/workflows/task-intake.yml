@@ -65,10 +65,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" -f name=agent-task -f color=6f42c1 -f description="Durable task submitted to the command center" >/dev/null 2>&1 || true
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" -f name="priority:low" -f color=cfd3d7 >/dev/null 2>&1 || true
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" -f name="priority:medium" -f color=fbca04 >/dev/null 2>&1 || true
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" -f name="priority:high" -f color=d93f0b >/dev/null 2>&1 || true
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if gh api --paginate "repos/${GITHUB_REPOSITORY}/labels?per_page=100" --jq '.[].name' | grep -Fxq -- "$name"; then
+              echo "Label already exists: $name"
+              return 0
+            fi
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" \
+              -f name="$name" -f color="$color" -f description="$description" >/dev/null
+            echo "Created missing label: $name"
+          }
+
+          ensure_label "agent-task" "6f42c1" "Durable task submitted to the command center"
+          ensure_label "priority:low" "cfd3d7" "Low priority task"
+          ensure_label "priority:medium" "fbca04" "Medium priority task"
+          ensure_label "priority:high" "d93f0b" "High priority task"
 
       - name: Create task issue
         id: create
