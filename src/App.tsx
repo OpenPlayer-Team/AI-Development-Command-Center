@@ -167,7 +167,7 @@ function App() {
           <section className="content-grid">
             <div className="panel task-panel">
               <div className="panel-heading">
-                <div><div className="section-title">Task queue <span className="tiny-count">{tasks.length}</span></div><p>Track work from idea to review.</p></div>
+                <div><div className="section-title">Local demo queue <span className="tiny-count">{tasks.length}</span></div><p>Illustrative browser-only tasks. Real agent issues appear in the GitHub panel.</p></div>
                 <div className="panel-heading-actions">
                   <label className="search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks" aria-label="Search tasks" /></label>
                   <button className="subtle-button" onClick={() => setShowComposer(true)}><Plus size={15} /> Add</button>
