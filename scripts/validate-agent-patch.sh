@@ -66,7 +66,7 @@ while IFS=$'\t' read -r added deleted path; do
           echo "ERROR: tests cannot be modified by this publisher: $path" >&2
           exit 1
           ;;
-        *.ts|*.tsx|*.js|*.jsx|*.css|*.html|*.json|*.md)
+        *.ts|*.tsx|*.js|*.jsx|*.css|*.html)
           ;;
         *)
           echo "ERROR: file type is outside the allowed source scope: $path" >&2
