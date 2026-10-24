@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const severities = ['info', 'low', 'moderate', 'high', 'critical', 'total'];
 
@@ -19,10 +21,22 @@ export function evaluateAuditReport(report, commandExitCode) {
     }
   }
 
+  const severityTotal = counts.info + counts.low + counts.moderate + counts.high + counts.critical;
+  if (counts.total !== severityTotal) {
+    throw new Error('npm audit report contains inconsistent severity totals.');
+  }
+
   if (!Number.isInteger(commandExitCode) || commandExitCode < 0) {
     throw new Error('npm audit command exit code is invalid.');
   }
 
+  if (report.vulnerabilities !== undefined &&
+      (typeof report.vulnerabilities !== 'object' || report.vulnerabilities === null || Array.isArray(report.vulnerabilities))) {
+    throw new Error('npm audit report contains an invalid vulnerabilities object.');
+  }
+  if (counts.total > 0 && report.vulnerabilities === undefined) {
+    throw new Error('npm audit report contains counts but no vulnerability details.');
+  }
   const findings = Object.entries(report.vulnerabilities ?? {});
   const highOrCritical = counts.high > 0 || counts.critical > 0;
   if (highOrCritical) {
@@ -54,7 +68,7 @@ export function evaluateAuditReport(report, commandExitCode) {
   };
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname === new URL('file://' + process.argv[1]).pathname) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [reportPath, exitCodeText] = process.argv.slice(2);
   if (!reportPath || exitCodeText === undefined || !/^\d+$/.test(exitCodeText)) {
     process.stderr.write('Usage: node scripts/check-npm-audit.mjs <report.json> <npm-audit-exit-code>\n');

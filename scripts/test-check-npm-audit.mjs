@@ -36,6 +36,9 @@ assert.match(commandFailure.reason, /failing closed/);
 assert.throws(() => evaluateAuditReport({}, 0), /missing dependency vulnerability metadata/);
 assert.throws(() => evaluateAuditReport({ metadata: { vulnerabilities: { high: -1 } } }, 0), /invalid count/);
 assert.throws(() => evaluateAuditReport(report(), Number.NaN), /exit code is invalid/);
+assert.throws(() => evaluateAuditReport(report({ high: 1, total: 0 }), 0), /inconsistent severity totals/);
+assert.throws(() => evaluateAuditReport({ ...report({ low: 1, total: 1 }), vulnerabilities: undefined }, 0), /no vulnerability details/);
+assert.throws(() => evaluateAuditReport({ ...report(), vulnerabilities: [] }, 0), /invalid vulnerabilities object/);
 assert.throws(() => evaluateAuditReport(null, 0), /non-object JSON report/);
 
 console.log('All npm audit policy tests passed.');
