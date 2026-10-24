@@ -79,7 +79,7 @@ function App() {
             <div className="quota-meta"><span>Budget used</span><strong>€0.00 / €0</strong></div>
           </div>
           <button className="nav-item" onClick={() => setActiveNav('Settings')}><Settings2 size={17} /><span>Settings</span></button>
-          <button className="profile-button"><div className="profile-avatar">U</div><span className="profile-copy"><strong>Workspace owner</strong><small>GitHub connected</small></span><MoreHorizontal size={17} /></button>
+          <button className="profile-button"><div className="profile-avatar">U</div><span className="profile-copy"><strong>Workspace owner</strong><small>No account connected</small></span><MoreHorizontal size={17} /></button>
         </div>
       </aside>
 
@@ -165,13 +165,13 @@ function App() {
               </section>
 
               <section className="panel github-panel">
-                <div className="panel-heading compact"><div><div className="section-title">GitHub connection</div><p>Repository-first workflow</p></div><GitBranch size={17} className="muted-icon" /></div>
+                <div className="panel-heading compact"><div><div className="section-title">GitHub repository</div><p>Repository-first workflow</p></div><GitBranch size={17} className="muted-icon" /></div>
                 <div className="repo-card">
                   <div className="repo-icon"><Boxes size={17} /></div>
-                  <div className="repo-details"><strong>AI-Development-Command-Center</strong><span><span className="repo-dot" /> Private repository</span></div>
-                  <span className="repo-visibility">PRIVATE</span>
+                  <div className="repo-details"><strong>AI-Development-Command-Center</strong><span><span className="repo-dot" /> Public repository</span></div>
+                  <span className="repo-visibility">PUBLIC</span>
                 </div>
-                <div className="repo-stats"><div><span>Branch</span><strong><GitBranch size={13} /> feat/phase-1-dashboard-foundation</strong></div><div><span>Merge policy</span><strong><ShieldCheck size={13} /> Human approval</strong></div></div>
+                <div className="repo-stats"><div><span>Default branch</span><strong><GitBranch size={13} /> main</strong></div><div><span>Merge policy</span><strong><ShieldCheck size={13} /> Human approval</strong></div></div>
                 <a className="github-link" href="https://github.com/OpenPlayer-Team/AI-Development-Command-Center" target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={14} /></a>
               </section>
             </div>
