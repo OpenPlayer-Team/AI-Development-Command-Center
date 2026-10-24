@@ -48,6 +48,12 @@ It requires the same dedicated isolated Linux runner, local Ollama model, and `O
 
 See [local patch proposal setup and safety limits](docs/LOCAL-AGENT-PATCH-PROPOSAL.md).
 
+### Phase 6: live GitHub status (anonymous, read-only)
+
+The dashboard reads the repository's public metadata, open pull requests, and the latest Actions runs directly from the GitHub REST API. It needs no token and performs only GET requests. Use the refresh control in the GitHub repository panel to request updated data. If the repository becomes private or anonymous API access is rate-limited, the panel shows an error instead of asking for credentials.
+
+Task composer entries and the illustrative task rows are still demo-only. The dashboard does not create GitHub issues, trigger workflows, change branches, or write to GitHub from the browser. Use the durable task intake workflow to create actual GitHub Issues.
+
 ### Phase 5: publish a validated proposal as a pull request
 
 The `.github/workflows/publish-validated-agent-patch.yml` workflow listens for a successful **Local AI patch proposal** run on the repository's default branch. When the patch exists and the isolated tests/build succeeded, it creates a separate `ai/issue-N-run-ID` branch and opens a pull request for review.
