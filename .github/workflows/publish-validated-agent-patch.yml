@@ -9,6 +9,7 @@ on:
 permissions:
   actions: read
   contents: write
+  issues: read
   pull-requests: write
 
 concurrency:
@@ -26,6 +27,8 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+          pattern: local-agent-patch-proposal-*
+          merge-multiple: true
           path: incoming
 
       - name: Check out the exact source commit without persistent credentials
@@ -35,39 +38,49 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Validate patch boundaries and apply to temporary workspace
+      - name: Validate issue identity, patch boundaries, and apply to temporary workspace
         id: validate
         shell: bash
         env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          artifacts=(incoming/local-agent-patch-proposal-*)
-          if (( ${#artifacts[@]} != 1 )); then
-            echo "::error::Expected exactly one local-agent-patch-proposal artifact."
-            exit 1
-          fi
-          artifact_dir="${artifacts[0]}"
-          artifact_name="${artifact_dir##*/}"
-          [[ "$artifact_name" =~ ^local-agent-patch-proposal-([1-9][0-9]*)$ ]] || {
-            echo "::error::Unexpected artifact name."; exit 1;
-          }
-          issue_number="${BASH_REMATCH[1]}"
-          patch="$artifact_dir/proposal.patch"
+          patch="incoming/proposal.patch"
+          readme="incoming/README.txt"
+
           if [[ ! -s "$patch" ]]; then
             {
-              echo "issue_number=$issue_number"
               echo "has_patch=false"
             } >> "$GITHUB_OUTPUT"
             {
               echo "## AI patch publication"
               echo
-              echo "The model declined to propose a patch. No pull request was created."
+              echo "The local model did not provide a patch. No pull request was created."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          [[ -s "$readme" ]] || { echo "::error::Proposal review notes are missing."; exit 1; }
+
+          issue_url=$(sed -n 's/^- Issue: //p' "$readme" | head -n 1)
+          [[ "$issue_url" =~ ^https://github\.com/OpenPlayer-Team/AI-Development-Command-Center/issues/([1-9][0-9]*)$ ]] || {
+            echo "::error::The artifact does not contain a valid issue URL for this repository."
+            exit 1
+          }
+          issue_number="${BASH_REMATCH[1]}"
+
+          gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json number,state,labels,url > "$RUNNER_TEMP/publish-issue.json"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const issue = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/publish-issue.json', 'utf8'));
+          const labels = (issue.labels ?? []).map(label => label.name);
+          if (issue.state !== 'OPEN') throw new Error('Task issue must still be open.');
+          if (!labels.includes('agent-task')) throw new Error('Task issue must retain the agent-task label.');
+          const expected = 'https://github.com/' + process.env.GITHUB_REPOSITORY + '/issues/' + issue.number;
+          if (issue.url !== expected) throw new Error('Task issue URL does not match repository and issue number.');
+          fs.writeFileSync(process.env.RUNNER_TEMP + '/publish-issue-number.txt', String(issue.number));
+          NODE
+          issue_number=$(cat "$RUNNER_TEMP/publish-issue-number.txt")
 
           metrics=$(bash scripts/validate-agent-patch.sh "$patch")
           files=$(sed -n 's/.*files=\([0-9][0-9]*\).*/\1/p' <<< "$metrics")
@@ -89,7 +102,7 @@ jobs:
             echo
             echo "- Source issue: #$issue_number"
             echo "- Source run: $SOURCE_RUN_ID"
-            echo "- Allowed scope checked by scripts/validate-agent-patch.sh: source files under src/, Markdown under docs/, and README.md (tests, workflows, dependencies, and lockfiles excluded)."
+            echo "- Allowed scope checked by scripts/validate-agent-patch.sh: source files under src/, Markdown under docs/, and README.md (tests, GitHub workflows, dependencies, and lockfiles excluded)."
             echo "- Bounds: $files files, $changed_lines changed lines."
             echo "- Patch applied only to a temporary hosted workspace; review is still required."
           } >> "$GITHUB_STEP_SUMMARY"
