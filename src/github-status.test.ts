@@ -36,6 +36,14 @@ const agentIssues = [
     labels: [{ name: 'agent-task' }, { name: 'priority:high' }],
     updated_at: '2026-10-24T18:00:00Z',
   },
+  {
+    number: 43,
+    title: 'Pull requests must not be listed as tasks',
+    html_url: 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/pull/43',
+    pull_request: { url: 'https://api.github.com/repos/OpenPlayer-Team/AI-Development-Command-Center/pulls/43' },
+    labels: [{ name: 'agent-task' }],
+    updated_at: '2026-10-24T18:00:00Z',
+  },
 ];
 
 const workflowRuns = {
@@ -81,6 +89,7 @@ describe('fetchGitHubStatus', () => {
       headBranch: 'feat/phase-1-dashboard-foundation',
       draft: false,
     });
+    expect(result.openAgentTasks).toHaveLength(1);
     expect(result.openAgentTasks[0]).toMatchObject({
       number: 42,
       title: 'Implement the local agent runner',
