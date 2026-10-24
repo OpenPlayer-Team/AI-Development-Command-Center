@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -92,6 +92,37 @@ describe('dashboard GitHub status panel', () => {
     expect(screen.getByRole('link', { name: /CI · success/ })).toHaveAttribute(
       'href',
       'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/100',
+    );
+  });
+
+  it('opens the focused pull-request view from the navigation', async () => {
+    installGitHubFetch();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Pull requests/ }));
+
+    expect(await screen.findByRole('heading', { name: 'Pull requests for human review' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /#1 · Phase 1: dashboard foundation/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/pull/1',
+    );
+    expect(screen.queryByRole('region', { name: 'Task metrics' })).not.toBeInTheDocument();
+  });
+
+  it('opens the durable task queue using live agent issues', async () => {
+    installGitHubFetch();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Task queue/ }));
+
+    expect(await screen.findByRole('heading', { name: 'Durable task queue' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /#42 · Implement the local agent runner/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/issues/42',
+    );
+    expect(screen.getByRole('link', { name: /Create durable task/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/task-intake.yml',
     );
   });
 
