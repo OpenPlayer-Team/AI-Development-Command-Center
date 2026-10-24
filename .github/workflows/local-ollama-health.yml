@@ -83,8 +83,8 @@ jobs:
           {
             echo "## Local Ollama runner health"
             echo
-            echo "- **Runner label requirement:** `self-hosted, linux, ai-agent`"
-            echo "- **Configured model:** `$OLLAMA_MODEL`"
+            echo "- **Runner label requirement:** \`self-hosted, linux, ai-agent\`"
+            echo "- **Configured model:** \`$OLLAMA_MODEL\`"
             echo "- **Ollama CLI:** responsive"
             echo "- **Ollama API:** responsive on loopback only"
             echo "- **Model availability:** confirmed by CLI and API"
