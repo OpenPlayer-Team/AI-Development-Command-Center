@@ -69,7 +69,7 @@ Before enabling this after merge, go to **Settings → Actions → General** and
 Requires Node.js 20 or newer.
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm test
 npm run build

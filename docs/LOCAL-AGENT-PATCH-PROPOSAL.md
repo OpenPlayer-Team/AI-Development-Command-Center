@@ -27,7 +27,7 @@ Do not register a personal daily-use workstation as this runner. Use a disposabl
 - It passes a bounded selection of tracked text files to the local model; context is incomplete by design.
 - It excludes hidden files, `.env` files, lockfiles, likely secret/credential filenames, and workflow files.
 - `git apply --check` on the local runner checks only whether the proposed diff applies cleanly. It does not prove correctness or safety.
-- A separate ephemeral GitHub-hosted runner downloads the artifact, checks out the matching source, applies the proposal only in its temporary workspace, installs dependencies with lifecycle scripts disabled, then runs `npm test` and `npm run build` when a patch exists.
+- A separate ephemeral GitHub-hosted runner downloads the artifact, checks out the matching source, applies the proposal only in its temporary workspace, runs `npm ci --ignore-scripts`, then `npm test` and `npm run build` when a patch exists.
 - The hosted validation job has read-only repository permission, does not persist checkout credentials, and does not publish repository changes.
 - After a successful proposal run on the default branch, the separate publisher workflow can open a PR. It validates changed paths and size limits, rejects workflow/dependency/test edits and path traversal, and never merges.
 - The test/build job executes proposed project code. Its isolation depends on GitHub-hosted runner disposal and must never be replaced with a persistent self-hosted runner.

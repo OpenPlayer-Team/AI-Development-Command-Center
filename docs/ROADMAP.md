@@ -6,7 +6,7 @@
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
 - [x] CI tests and production build pass on a prior branch revision
-- [ ] Generate and commit package lockfile
+- [x] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
 ## Phase 2 — GitHub-native task management
@@ -45,7 +45,7 @@
 - [ ] Verify responsive UI and accessibility on actual desktop/mobile browsers
 - [ ] Run all tests and production build on the latest revision
 - [ ] Configure GitHub Pages and verify deployment
-- [ ] Commit a package lockfile and use reproducible dependency installation
+- [x] Commit package lockfile and use reproducible dependency installation via `npm ci`
 - [ ] Document limitations, quotas, and operational procedures
 
 A checklist item is complete only when implementation or verification evidence exists. A workflow file is not considered operationally verified until an actual run has been inspected.

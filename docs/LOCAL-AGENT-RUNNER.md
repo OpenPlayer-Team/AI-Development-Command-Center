@@ -7,7 +7,7 @@ This guide covers the local-model steps in the command-center workflow. The runn
 1. **Durable intake:** the task-intake workflow creates a GitHub Issue labelled `agent-task` and `priority:...`.
 2. **Preflight / planning:** the manual planner validates an issue and can upload a plan artifact. Planning alone does not edit code.
 3. **Patch proposal:** the manual `Local AI patch proposal` workflow sends bounded task/source context to local Ollama and produces a unified diff artifact.
-4. **Isolated verification:** a fresh GitHub-hosted Linux runner applies the proposed diff only in its temporary workspace after the patch allowlist validator passes, then runs `npm test` and `npm run build`. Dependency installation uses `--ignore-scripts`.
+4. **Isolated verification:** a fresh GitHub-hosted Linux runner applies the proposed diff only in its temporary workspace after the patch allowlist validator passes, then runs `npm test` and `npm run build`. Dependency installation uses `npm ci --ignore-scripts`.
 5. **PR publication:** after the successful `workflow_dispatch` run on the default branch, a separate publisher checks the artifact again and may create a restricted-scope branch and pull request. It never merges or auto-approves.
 
 The local model does not receive a GitHub write token. Its output is untrusted and is never applied to the self-hosted runner's checkout. The test runner and publisher use separate ephemeral GitHub-hosted jobs.

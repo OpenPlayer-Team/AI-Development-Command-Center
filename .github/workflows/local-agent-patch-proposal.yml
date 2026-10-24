@@ -214,7 +214,7 @@ jobs:
 
       - name: Install dependencies without lifecycle scripts
         if: steps.patch.outputs.has_patch == 'true'
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Run tests against proposed patch
         if: steps.patch.outputs.has_patch == 'true'
