@@ -1,39 +1,51 @@
-# Local Ollama planning runner
+# Local Ollama agent runner
 
-## What this phase does
+This guide covers the local-model steps in the command-center workflow. The runner is optional infrastructure: the workflows cannot call Ollama until a suitable runner is registered and the model variable exists.
 
-The `Local AI task planner` workflow retrieves an open GitHub Issue labelled `agent-task`, sends its bounded title/body to an already-installed local Ollama model, and uploads a Markdown implementation plan for human review.
+## Workflow stages
 
-It deliberately does **not**:
-- check out repository source code;
-- run commands from the task description;
-- edit source files or create a branch;
-- create a pull request or merge changes;
-- access API keys or other application secrets.
+1. **Durable intake:** the task-intake workflow creates a GitHub Issue labelled `agent-task` and `priority:...`.
+2. **Preflight / planning:** the manual planner validates an issue and can upload a plan artifact. Planning alone does not edit code.
+3. **Patch proposal:** the manual `Local AI patch proposal` workflow sends bounded task/source context to local Ollama and produces a unified diff artifact.
+4. **Isolated verification:** a fresh GitHub-hosted Linux runner applies the proposed diff only in its temporary workspace after the patch allowlist validator passes, then runs `npm test` and `npm run build`. Dependency installation uses `--ignore-scripts`.
+5. **PR publication:** after the successful `workflow_dispatch` run on the default branch, a separate publisher checks the artifact again and may create a restricted-scope branch and pull request. It never merges or auto-approves.
 
-The model output is untrusted. A generated plan is not proof that files exist or tests pass.
+The local model does not receive a GitHub write token. Its output is untrusted and is never applied to the self-hosted runner's checkout. The test runner and publisher use separate ephemeral GitHub-hosted jobs.
 
 ## Prerequisites
 
-1. A Linux machine or disposable VM dedicated to this workload.
-2. GitHub Actions self-hosted runner installed and registered for this repository.
-3. Runner labels include `self-hosted`, `linux`, and `ai-agent`.
-4. Ollama installed and running on that machine.
-5. The chosen model already pulled locally using Ollama.
-6. In repository **Settings → Secrets and variables → Actions → Variables**, create `OLLAMA_MODEL` with the exact installed model name (for example, the model name shown by `ollama list`).
+1. A disposable Linux VM or dedicated host that can safely run a self-hosted GitHub Actions runner.
+2. The repository self-hosted runner registered with labels `self-hosted`, `linux`, and `ai-agent`.
+3. Ollama installed and running on the runner. Verify it with `ollama list`.
+4. The desired model pulled locally with Ollama. Verify its exact model name using `ollama list`.
+5. Repository Actions variable `OLLAMA_MODEL` set to that exact model name under **Settings → Secrets and variables → Actions → Variables**.
+6. Node.js and GitHub CLI (`gh`) installed on the self-hosted runner. The planner/proposal workflows use `gh issue view` with the job's read-only token.
 
-Do not use a runner that has personal files, SSH keys, cloud credentials, Docker socket access, production access, or reusable secrets. Prefer a disposable VM with limited network access. Do not register a personal workstation as an always-on runner for untrusted tasks.
+Do not register a personal daily-use workstation or a host with SSH keys, personal files, production credentials, cloud credentials, privileged Docker access, or unrelated network reachability. Prefer a disposable VM with limited outbound network access and no reusable secrets. Local inference may avoid model API charges, but the runner hardware and electricity are not free.
 
-## Run
+## Enable and run
 
-1. Ensure the reviewed feature branch containing this workflow has been merged to the default branch. GitHub's manual workflow dispatch may not expose workflow files that exist only on a feature branch.
-2. Create a task through **Actions → Create durable task**, or create an Issue with the `agent-task` label.
-3. Open **Actions → Local AI task planner → Run workflow**.
-4. Enter the open task Issue number and start the workflow.
-5. Inspect the run summary and download the `local-agent-plan-N` artifact.
+These manual workflows must first be present on the default branch. A workflow existing only on the feature branch may not be available for manual dispatch.
 
-## Limits and next phase
+1. Review and merge the feature PR only after inspecting its diffs and CI results.
+2. Register and validate the isolated self-hosted runner.
+3. Install Ollama and download the selected model, then set `OLLAMA_MODEL`.
+4. In **Settings → Actions → General**, enable GitHub Actions to create pull requests if the publisher is expected to open PRs.
+5. Create an issue with clear acceptance criteria and the `agent-task` label. The task-intake workflow creates this label when necessary.
+6. Open **Actions → Local AI patch proposal → Run workflow**, select the default branch, enter the open issue number, and start the run.
+7. Inspect the plan/proposal artifact, the hosted validation job, and any resulting pull request. Review the entire diff and its CI results before merging manually.
 
-This is a planning-only milestone, not yet an autonomous coding agent. It is intentionally manual and bounded to 10 minutes. Before enabling code changes, design a separate disposable workspace, enforce command allowlists, apply network and filesystem restrictions, avoid exposing secrets to model-generated code, run tests in isolation, and require explicit human approval before opening a pull request. Never auto-merge.
+## Security boundaries
 
-GitHub-hosted runner minutes and self-hosted infrastructure have different cost profiles. Ollama model inference itself can be local and incur no model API charge, but hardware/electricity and GitHub usage limits still apply. No paid provider fallback is configured.
+- The self-hosted jobs use read-only contents/issues permissions; checkout does not persist the GitHub token.
+- Source context sent to Ollama is capped and intentionally incomplete. The model output and issue text remain untrusted.
+- Artifacts exclude the prompt and source-context bundle; they contain a patch and review notes only.
+- The reusable validator limits size, file count, changed lines, extensions and paths. It rejects tests, workflows, package/dependency files, lockfiles, symlinks, renames, binary patches, traversal and paths outside the allowlist.
+- The hosted test job runs code from the generated patch without write permissions and without checkout credentials. Treat test execution as code execution, even though the runner is ephemeral.
+- The publisher runs only after a successful manual proposal run on the default branch and opens a separate PR. It never merges or approves a PR.
+- Passing tests and a successful build demonstrate only that those checks passed for that revision; they do not prove that the code is correct or safe.
+- Review artifact contents, workflow changes, permissions, and PR CI before accepting a change.
+
+## Known limitations
+
+The proposal, test, and publisher workflow chain has not yet been verified end-to-end with a configured Ollama runner. The hosted CI jobs can be tested independently, but that is not proof that a model has proposed a real patch. GitHub's anonymous API has rate limits; the dashboard only reads public repository data and does not authenticate to private repositories. No paid model provider or automatic merge is configured.
