@@ -30,6 +30,16 @@ const pullRequests = [
   },
 ];
 
+const agentIssues = [
+  {
+    number: 42,
+    title: 'Implement the local agent runner',
+    html_url: 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/issues/42',
+    labels: [{ name: 'agent-task' }, { name: 'priority:high' }],
+    updated_at: '2026-10-24T18:00:00Z',
+  },
+];
+
 const workflowRuns = {
   workflow_runs: [
     {
@@ -49,6 +59,7 @@ function installGitHubFetch(statusCode = 200) {
     const url = String(input);
     if (statusCode !== 200) return jsonResponse({ message: 'Not Found' }, statusCode);
     if (url.includes('/pulls?')) return jsonResponse(pullRequests);
+    if (url.includes('/issues?')) return jsonResponse(agentIssues);
     if (url.includes('/actions/runs?')) return jsonResponse(workflowRuns);
     return jsonResponse(repository);
   }));
@@ -74,6 +85,10 @@ describe('dashboard GitHub status panel', () => {
     );
     expect(screen.getByText('main')).toBeInTheDocument();
     expect(screen.getByText('public')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /#42 Implement the local agent runner/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/issues/42',
+    );
     expect(screen.getByRole('link', { name: /CI · success/ })).toHaveAttribute(
       'href',
       'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/100',
