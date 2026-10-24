@@ -132,7 +132,7 @@ describe('fetchGitHubStatus', () => {
     await expect(fetchGitHubStatus()).rejects.toThrow('GitHub API request failed (404)');
   });
 
-  it('rejects non-GitHub links in API content', async () => {
+  it('does not expose non-GitHub links and keeps other status panels available', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) {
@@ -143,6 +143,28 @@ describe('fetchGitHubStatus', () => {
       return jsonResponse(repository);
     }));
 
-    await expect(fetchGitHubStatus()).rejects.toThrow('unsafe URL');
+    await expect(fetchGitHubStatus()).resolves.toMatchObject({
+      repository: { fullName: repository.full_name },
+      openPullRequests: [],
+      openAgentTasks: [{ number: 42 }],
+      warnings: ['Open pull requests could not be loaded.'],
+    });
   });
-});
+
+  it('keeps repository and issue data when the workflow API is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
+      if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse({ message: 'Forbidden' }, 403);
+      return jsonResponse(repository);
+    }));
+
+    await expect(fetchGitHubStatus()).resolves.toMatchObject({
+      repository: { visibility: 'public' },
+      openPullRequests: [{ number: 1 }],
+      openAgentTasks: [{ number: 42 }],
+      recentWorkflowRuns: [],
+      warnings: ['Recent workflow runs could not be loaded.'],
+    });
+  });});
