@@ -20,7 +20,10 @@
 
 ## Phase 3 — Bounded agent runner
 - [ ] Define a threat model and allowed tool/command policy
-- [ ] Add manual workflow dispatch and bounded jobs
+- [x] Add a manual task-validation preflight workflow with a short timeout and read-only permissions
+- [x] Validate open issue, agent-task label, and bounded title/body length before any future execution
+- [x] Explicitly report that no AI execution or code execution is configured
+- [ ] Implement an isolated bounded execution job after provider/runner design and security review
 - [ ] Store secrets only in GitHub Actions secrets
 - [ ] Keep pull requests from untrusted code isolated from secrets
 - [ ] Require human approval before creating or applying code changes
