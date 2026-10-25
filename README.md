@@ -76,7 +76,7 @@ npm run build
 npm audit
 ```
 
-The CI workflow runs actionlint, patch-policy tests, npm-audit gate tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
+The CI workflow runs actionlint, a full-SHA pin-policy check, patch-policy tests, npm-audit gate tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
 
 ## GitHub deployment
 

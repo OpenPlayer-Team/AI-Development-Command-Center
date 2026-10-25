@@ -15,7 +15,7 @@ The current branch contains a React + TypeScript + Vite static dashboard. The Ov
 
 ## Dependency security verification
 
-On commit `eb4ccfb1b818c85fd83c471c17b6497babbb4dbf` (2026-10-24), [GitHub Actions CI run 40125727628](https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/40125727628) completed successfully: workflow lint, patch-policy tests, npm-audit gate tests, secret-redaction tests, **14 unit tests**, and the production build passed; `npm audit --audit-level=high` reported **0 vulnerabilities**. The CI audit step now fails on high/critical findings, inconsistent audit counts, or unusable audit output. Re-run CI after future dependency or implementation changes; this evidence applies to the cited commit.
+On commit `c73370ba54fe86320013331cbce3d5a2c8a33d6b` (2026-10-25), [GitHub Actions CI run 40182551648](https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/40182551648) completed successfully: workflow lint, full-SHA action-pin enforcement and tests, patch-policy tests, npm-audit gate tests, secret-redaction tests, **14 unit tests**, and the production build passed; `npm audit --audit-level=high` reported **0 vulnerabilities**. The CI audit step fails on high/critical findings, inconsistent audit counts, or unusable audit output. Re-run CI after future dependency or implementation changes; this evidence applies to the cited commit.
 
 ## Safety requirements
 
