@@ -41,6 +41,10 @@ jobs:
           node scripts/check-npm-audit.mjs "$AUDIT_REPORT" "$audit_exit"
       - name: Lint GitHub Actions workflow files
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Enforce full-SHA pins for external actions
+        run: node scripts/check-pinned-actions.mjs
+      - name: Test full-SHA pin policy
+        run: node scripts/test-check-pinned-actions.mjs
       - name: Test AI patch publisher policy
         run: bash scripts/test-validate-agent-patch.sh
       - name: Test npm audit gate policy

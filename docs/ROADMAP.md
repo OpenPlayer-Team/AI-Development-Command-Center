@@ -30,6 +30,7 @@
 - [x] Document the initial threat model and command boundaries in `docs/THREAT-MODEL.md`
 - [ ] Independently review the threat model and command policy
 - [x] Pin third-party GitHub Actions to full commit SHAs resolved from their release tags
+- [x] Enforce full-SHA action pins and test the policy in CI
 - [x] Add bounded patch generation and test/build validation in an ephemeral GitHub-hosted runner (workflow still requires an operational self-hosted Ollama runner)
 - [x] Split publisher into read-only validation and write-enabled publication jobs; it never merges or runs generated project code with write permissions
 - [x] Extract patch boundary policy into a reusable validator and cover accepted/rejected cases in CI
