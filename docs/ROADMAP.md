@@ -5,7 +5,7 @@
 - [x] Dashboard UI and local task composer
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
-- [x] CI on commit `c73370ba54fe86320013331cbce3d5a2c8a33d6b` passed workflow lint, full-SHA pin enforcement/tests, patch-policy tests, npm-audit gate tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
+- [x] CI on commit `4feeb553029e1163537ed7aa7713c214ab52b4d3` passed workflow lint, full-SHA pin enforcement/tests, expanded patch-boundary tests, npm-audit gate tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
 - [x] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
