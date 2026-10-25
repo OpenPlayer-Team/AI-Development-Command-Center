@@ -76,7 +76,9 @@ npm run build
 npm audit
 ```
 
-The CI workflow runs actionlint, a full-SHA pin-policy check, patch-policy tests, npm-audit gate tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
+To run the JavaScript-based policy tests locally, use `node scripts/test-check-pinned-actions.mjs`, `node scripts/test-check-npm-audit.mjs`, `node scripts/test-run-local-ollama.mjs`, and `node scripts/test-redact-agent-context.mjs`. The patch-policy test is a Bash script (`bash scripts/test-validate-agent-patch.sh`) and requires Bash/Git. The mock provider tests do not invoke a real model or make network requests.
+
+The CI workflow runs actionlint, a full-SHA pin-policy check, patch-policy tests, npm-audit gate tests, local-only Ollama-adapter tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
 
 ## GitHub deployment
 

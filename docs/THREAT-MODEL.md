@@ -60,7 +60,7 @@ Security goals:
 ### 5. Pull-request publisher
 
 - Third-party GitHub Actions are pinned to full commit SHAs; CI checks every workflow to prevent moving tags/branches from being added back. These pins reduce reference mutability risk, but do not replace reviewing action source or updates.
-- The local provider adapter launches only the `ollama` executable with argument-safe spawning (`shell: false`), rejects provider names other than `ollama-local`, validates the model ID, caps prompt/output size, and enforces a time limit. It does not implement a paid provider or automatic fallback.
+- The local provider adapter launches only the `ollama` executable with argument-safe spawning (`shell: false`), rejects provider names other than `ollama-local`, validates the model ID, caps prompt/output size, and enforces a time limit. It does not implement a paid provider or automatic fallback. Provider errors fail closed; the task Issue is not marked complete or closed, and recovery is a user-triggered workflow re-run.
 - The publisher accepts only a successful manually dispatched proposal run from this repository's default branch and requires the run to come from the expected workflow path.
 - Its first job has only `actions: read`, `contents: read`, and `issues: read`; it verifies the source run and task Issue, rejects secret-like output, validates patch boundaries, applies the patch in a temporary workspace, and uploads only the validated patch with a one-day retention.
 - A second job has the `contents` and `pull-requests` write permissions needed to publish. It rechecks Issue eligibility, fetches the public source anonymously, revalidates the patch, and applies it in a temporary workspace. It does not invoke the model or execute generated project code.

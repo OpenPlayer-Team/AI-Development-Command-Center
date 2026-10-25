@@ -42,10 +42,10 @@
 
 ## Phase 4 — Provider routing and local fallback
 - [x] Implement a local-only Ollama provider adapter with model validation, prompt/output bounds, timeout, and no cloud fallback
-- [ ] Implement provider-unavailable queue behavior and explicit retry policy
-- [ ] Add provider-unavailable queue behavior and retry limits
-- [ ] Enforce €0 budget with no paid fallback
-- [ ] Do not route to cloud APIs unless explicitly configured and budget-approved
+- [x] Fail closed if local inference is unavailable: the workflow fails, the durable Issue remains open, and a user must manually retry after fixing the provider
+- [x] Enforce a €0 AI-provider policy for the adapter by rejecting all provider names except `ollama-local`; no cloud route or paid fallback is implemented
+- [ ] Implement persistent provider-unavailable queue state, attempt tracking, and explicit bounded retry/backoff policy
+- [ ] Add cloud providers only behind explicit configuration and budget approval; never add silent fallback
 
 ## Phase 5 — Release readiness
 - [ ] Verify responsive UI and accessibility on actual desktop/mobile browsers

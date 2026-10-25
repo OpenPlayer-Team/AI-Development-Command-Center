@@ -15,7 +15,7 @@ The current branch contains a React + TypeScript + Vite static dashboard. The Ov
 
 ## Dependency security verification
 
-On commit `4feeb553029e1163537ed7aa7713c214ab52b4d3` (2026-10-25), [GitHub Actions CI run 40182942439](https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/40182942439) completed successfully: workflow lint, full-SHA action-pin enforcement/tests, expanded patch-boundary tests (including hidden paths, mode changes, symlinks, size/file/line limits and empty patches), npm-audit gate tests, secret-redaction tests, **14 unit tests**, and the production build passed; `npm audit --audit-level=high` reported **0 vulnerabilities**. Re-run CI after future dependency or implementation changes; this evidence applies to the cited commit.
+On commit `f8a93369ff76bae6edea6abe39cc483747d18309` (2026-10-25), [GitHub Actions CI run 40183619654](https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/40183619654) completed successfully: workflow lint, full-SHA action-pin enforcement/tests, expanded patch-boundary tests, npm-audit gate tests, local-only Ollama-provider tests, secret-redaction tests, **14 unit tests**, and production build passed; `npm audit --audit-level=high` reported **0 vulnerabilities**. The local-provider tests use a mock CLI and do not run real model inference. This evidence applies to the cited commit.
 
 ## Safety requirements
 
