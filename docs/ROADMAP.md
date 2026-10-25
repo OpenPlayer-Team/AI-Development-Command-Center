@@ -5,7 +5,7 @@
 - [x] Dashboard UI and local task composer
 - [x] Typed task helpers and unit tests
 - [x] GitHub Actions CI workflow
-- [x] CI on commit `4feeb553029e1163537ed7aa7713c214ab52b4d3` passed workflow lint, full-SHA pin enforcement/tests, expanded patch-boundary tests, npm-audit gate tests, redaction tests, **14 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
+- [x] CI on commit `ae4bdab738722f1b758d26186b670760a578cf86` passed workflow lint, full-SHA pin enforcement/tests, expanded patch-boundary tests, npm-audit gate tests, redaction tests, **16 unit tests**, production build, and npm audit with **0 vulnerabilities**; repeat on each release candidate
 - [x] Generate and commit package lockfile
 - [ ] Verify Pages deployment after merge and repository configuration
 
@@ -16,6 +16,7 @@
 - [x] Least-privilege task intake (`issues: write` only) and preflight (`issues: read` only) token permissions
 - [x] Add anonymous read-only sync for public `agent-task` issues, open pull requests, and recent Actions runs (private repositories need future secure authentication)
 - [x] Add live read-only dashboard status for public repository metadata, open pull requests, and recent Actions runs
+- [x] Show the most recent Local Ollama runner health-check result in Agent Workspace, with clear historical-status wording and a workflow link
 - [x] Add focused review/queue views that link to real GitHub issues and pull requests
 - [x] Give sidebar destinations dedicated views for tasks, agents, activity, pull requests, workflows, logs guidance, and settings
 - [ ] Validate the intake workflow by creating a test issue, then close/delete it as appropriate

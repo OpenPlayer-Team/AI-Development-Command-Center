@@ -6,7 +6,7 @@ A GitHub-first software-development command center designed around a strict **â‚
 
 The React + TypeScript + Vite dashboard is an interface preview. It can create tasks in the current browser session, but those entries are not durable and do not execute code. The repository also includes GitHub Actions CI and a Pages deployment workflow.
 
-The sidebar now opens dedicated views for the task queue, agent workspace, GitHub activity, pull requests, workflow runs, terminal-log guidance, and settings. The queue/PR/workflow panels use public read-only GitHub metadata. The sample task rows and quick composer on Overview remain session-only demo data.
+The sidebar opens dedicated views for task queue, agent workspace, GitHub activity, pull requests, workflow runs, terminal-log guidance, and settings. The queue/PR/workflow panels use public read-only GitHub metadata. Agent Workspace includes the last recorded Ollama health-check run and a link to rerun the diagnostic; it labels the result as historical, not proof of current provider availability. The sample task rows and quick composer on Overview remain session-only demo data.
 
 ### Phase 2: durable GitHub task intake
 
@@ -78,7 +78,7 @@ npm audit
 
 To run the JavaScript-based policy tests locally, use `node scripts/test-check-pinned-actions.mjs`, `node scripts/test-check-npm-audit.mjs`, `node scripts/test-run-local-ollama.mjs`, and `node scripts/test-redact-agent-context.mjs`. The patch-policy test is a Bash script (`bash scripts/test-validate-agent-patch.sh`) and requires Bash/Git. The mock provider tests do not invoke a real model or make network requests.
 
-The CI workflow runs actionlint, a full-SHA pin-policy check, patch-policy tests, npm-audit gate tests, local-only Ollama-adapter tests, best-effort secret-redaction tests, the app unit tests, and a production build. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
+The CI workflow runs actionlint, a full-SHA pin-policy check, expanded patch-policy tests, npm-audit gate tests, local-only Ollama-adapter tests, best-effort secret-redaction tests, the app unit tests, and a production build. The current dashboard CI run passes 16 application unit tests; it does not run a real Ollama model. It runs `npm audit --audit-level=high` and fails closed on high/critical findings, inconsistent severity totals, or unusable audit output; lower-severity findings are still reported. Do not blindly use `npm audit fix --force`.
 
 ## GitHub deployment
 
