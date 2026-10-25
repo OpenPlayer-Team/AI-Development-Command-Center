@@ -72,4 +72,51 @@ diff --git a/src/../README.md b/src/../README.md
 PATCH
 expect_reject "path traversal" "$tmp/path-traversal.patch"
 
+cat > "$tmp/hidden-path.patch" <<'PATCH'
+diff --git a/src/.env b/src/.env
+new file mode 100644
+--- /dev/null
++++ b/src/.env
+@@ -0,0 +1 @@
++DUMMY=value
+PATCH
+expect_reject "hidden source path" "$tmp/hidden-path.patch"
+
+cat > "$tmp/mode-change.patch" <<'PATCH'
+diff --git a/src/App.tsx b/src/App.tsx
+old mode 100644
+new mode 100755
+PATCH
+expect_reject "file mode change" "$tmp/mode-change.patch"
+
+cat > "$tmp/symlink.patch" <<'PATCH'
+diff --git a/src/alias.ts b/src/alias.ts
+new file mode 120000
+--- /dev/null
++++ b/src/alias.ts
+@@ -0,0 +1 @@
++../README.md
+PATCH
+expect_reject "symlink creation" "$tmp/symlink.patch"
+
+# Keep each generated patch valid so the policy checks the explicit line/file bounds.
+for i in $(seq 1 1001); do
+  printf '// line-bound-%s\n' "$i" >> "$fixture/src/App.tsx"
+done
+git -C "$fixture" diff -- src/App.tsx > "$tmp/too-many-lines.patch"
+git -C "$fixture" checkout -- .
+expect_reject "more than 1000 changed lines" "$tmp/too-many-lines.patch"
+
+for i in $(seq -w 1 13); do
+  printf 'export const generated%s = %s;\n' "$i" "$i" > "$fixture/src/generated-$i.ts"
+done
+git -C "$fixture" add -N 'src/generated-*.ts'
+git -C "$fixture" diff -- > "$tmp/too-many-files.patch"
+git -C "$fixture" reset -q -- 'src/generated-*.ts'
+rm -f "$fixture"/src/generated-*.ts
+expect_reject "more than 12 changed files" "$tmp/too-many-files.patch"
+
+: > "$tmp/empty.patch"
+expect_reject "empty patch" "$tmp/empty.patch"
+
 echo "All patch policy tests passed."
