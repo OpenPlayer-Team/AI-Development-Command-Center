@@ -1,0 +1,127 @@
+name: Create durable task
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Short task title
+        required: true
+        type: string
+      description:
+        description: Goal, context, acceptance criteria, and constraints
+        required: true
+        type: string
+      priority:
+        description: Task priority
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+        default: medium
+
+permissions:
+  issues: write
+
+concurrency:
+  group: task-intake-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  create-task:
+    name: Create a durable GitHub Issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Validate task input
+        env:
+          TASK_TITLE: ${{ inputs.title }}
+          TASK_DESCRIPTION: ${{ inputs.description }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${TASK_TITLE//[[:space:]]/}" ]]; then
+            echo "::error::Task title must not be empty."
+            exit 1
+          fi
+          if [[ ${#TASK_TITLE} -gt 200 ]]; then
+            echo "::error::Task title must be 200 characters or fewer."
+            exit 1
+          fi
+          if [[ -z "${TASK_DESCRIPTION//[[:space:]]/}" ]]; then
+            echo "::error::Task description must not be empty."
+            exit 1
+          fi
+          if [[ ${#TASK_DESCRIPTION} -gt 12000 ]]; then
+            echo "::error::Task description must be 12000 characters or fewer."
+            exit 1
+          fi
+
+      - name: Ensure task labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            if gh api --paginate "repos/${GITHUB_REPOSITORY}/labels?per_page=100" --jq '.[].name' | grep -Fx -- "$name" >/dev/null; then
+              echo "Label already exists: $name"
+              return 0
+            fi
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" \
+              -f name="$name" -f color="$color" -f description="$description" >/dev/null
+            echo "Created missing label: $name"
+          }
+
+          ensure_label "agent-task" "6f42c1" "Durable task submitted to the command center"
+          ensure_label "priority:low" "cfd3d7" "Low priority task"
+          ensure_label "priority:medium" "fbca04" "Medium priority task"
+          ensure_label "priority:high" "d93f0b" "High priority task"
+
+      - name: Create task issue
+        id: create
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_TITLE: ${{ inputs.title }}
+          TASK_DESCRIPTION: ${{ inputs.description }}
+          TASK_PRIORITY: ${{ inputs.priority }}
+          TASK_ACTOR: ${{ github.actor }}
+          TASK_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          body_file="$(mktemp)"
+          trap 'rm -f "$body_file"' EXIT
+          {
+            printf '%s\n\n' "$TASK_DESCRIPTION"
+            printf '%s\n' '---'
+            printf 'Priority: **%s**\n' "$TASK_PRIORITY"
+            printf 'Submitted by: @%s\n' "$TASK_ACTOR"
+            printf 'Source commit: %s\n\n' "$TASK_SHA"
+            printf '%s\n' '> This issue is a durable task record. It does not automatically execute code or authorize merging.'
+          } > "$body_file"
+          issue_url="$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$TASK_TITLE" --body-file "$body_file" --label agent-task --label "priority:$TASK_PRIORITY")"
+          if [[ ! "$issue_url" =~ ^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$ ]]; then
+            echo "::error::GitHub CLI did not return a valid issue URL."
+            exit 1
+          fi
+          echo "issue_url=$issue_url" >> "$GITHUB_OUTPUT"
+          echo "Created durable task: $issue_url"
+
+      - name: Publish task link
+        env:
+          ISSUE_URL: ${{ steps.create.outputs.issue_url }}
+        run: |
+          {
+            echo "## Task created"
+            echo
+            echo "A durable GitHub Issue was created:"
+            echo
+            echo "$ISSUE_URL"
+            echo
+            echo "No agent execution or merge was triggered."
+          } >> "$GITHUB_STEP_SUMMARY"

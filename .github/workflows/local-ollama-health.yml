@@ -1,0 +1,97 @@
+name: Local Ollama runner health
+
+on:
+  workflow_dispatch:
+
+# This diagnostic needs no repository data, issue access, artifacts, or write token.
+permissions: {}
+
+concurrency:
+  group: local-ollama-health-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    name: Check isolated local Ollama runner
+    runs-on: [self-hosted, linux, ai-agent]
+    timeout-minutes: 3
+    steps:
+      - name: Verify local Ollama CLI, configured model, and loopback API
+        shell: bash
+        env:
+          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
+        run: |
+          set -euo pipefail
+          for command_name in ollama curl node timeout awk grep; do
+            command -v "$command_name" >/dev/null 2>&1 || {
+              echo "::error::Required command missing on the isolated runner: $command_name"
+              exit 1
+            }
+          done
+
+          [[ -n "${OLLAMA_MODEL//[[:space:]]/}" ]] || {
+            echo "::error::Set repository variable OLLAMA_MODEL to the exact installed model name."
+            exit 1
+          }
+          [[ "$OLLAMA_MODEL" =~ ^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$ ]] || {
+            echo "::error::OLLAMA_MODEL contains unsupported characters."
+            exit 1
+          }
+
+          cli_output="$RUNNER_TEMP/ollama-health-cli.txt"
+          tags_json="$RUNNER_TEMP/ollama-health-tags.json"
+          trap 'rm -f "$cli_output" "$tags_json"' EXIT
+
+          if ! timeout 5s ollama list > "$cli_output" 2>&1; then
+            echo "::error::Ollama CLI did not respond successfully within five seconds."
+            exit 1
+          fi
+          if ! awk 'NR > 1 {print $1}' "$cli_output" | grep -Fx -- "$OLLAMA_MODEL" >/dev/null; then
+            echo "::error::Configured OLLAMA_MODEL is not installed locally."
+            exit 1
+          fi
+
+          if ! timeout 5s curl --fail --silent --show-error --max-time 3 \
+            http://127.0.0.1:11434/api/tags > "$tags_json" 2>/dev/null; then
+            echo "::error::Ollama loopback API did not respond at 127.0.0.1:11434."
+            exit 1
+          fi
+
+          node --input-type=commonjs - "$tags_json" "$OLLAMA_MODEL" <<'NODE'
+          const fs = require('node:fs');
+          const [file, expected] = process.argv.slice(2);
+          let payload;
+          try {
+            payload = JSON.parse(fs.readFileSync(file, 'utf8'));
+          } catch {
+            console.error('Ollama API returned invalid JSON.');
+            process.exit(1);
+          }
+          if (!Array.isArray(payload.models)) {
+            console.error('Ollama API response does not contain a models array.');
+            process.exit(1);
+          }
+          const names = payload.models
+            .filter(model => model && typeof model.name === 'string')
+            .map(model => model.name);
+          if (!names.includes(expected)) {
+            console.error('Ollama API model list does not contain the configured model.');
+            process.exit(1);
+          }
+          NODE
+
+          {
+            echo "## Local Ollama runner health"
+            echo
+            echo "- **Runner label requirement:** \`self-hosted, linux, ai-agent\`"
+            echo "- **Configured model:** \`$OLLAMA_MODEL\`"
+            echo "- **Ollama CLI:** responsive"
+            echo "- **Ollama API:** responsive on loopback only"
+            echo "- **Model availability:** confirmed by CLI and API"
+            echo
+            echo "This check did not read repository source, query GitHub Issues, invoke the model, or execute project code."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up health-check output
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ollama-health-cli.txt" "$RUNNER_TEMP/ollama-health-tags.json"
