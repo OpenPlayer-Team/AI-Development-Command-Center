@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, LOCAL_AGENT_RUNNER_DOC_URL } from './github-status';
+import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, GITHUB_OLLAMA_HEALTH_URL, LOCAL_AGENT_RUNNER_DOC_URL } from './github-status';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return {
@@ -60,11 +60,26 @@ const workflowRuns = {
   ],
 };
 
+const localOllamaHealthRuns = {
+  workflow_runs: [
+    {
+      id: 200,
+      name: 'Local Ollama runner health',
+      status: 'completed',
+      conclusion: 'success',
+      html_url: 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/200',
+      head_branch: 'main',
+      updated_at: '2026-10-25T09:00:00Z',
+    },
+  ],
+};
+
 describe('canonical repository links', () => {
   it('derives the dashboard links from one repository base', () => {
     expect(GITHUB_REPOSITORY_URL).toBe('https://github.com/OpenPlayer-Team/AI-Development-Command-Center');
     expect(GITHUB_TASK_INTAKE_URL).toBe(GITHUB_REPOSITORY_URL + '/actions/workflows/task-intake.yml');
     expect(GITHUB_ACTIONS_URL).toBe(GITHUB_REPOSITORY_URL + '/actions');
+    expect(GITHUB_OLLAMA_HEALTH_URL).toBe(GITHUB_REPOSITORY_URL + '/actions/workflows/local-ollama-health.yml');
     expect(LOCAL_AGENT_RUNNER_DOC_URL).toBe(GITHUB_REPOSITORY_URL + '/blob/main/docs/LOCAL-AGENT-RUNNER.md');
   });
 });
@@ -81,6 +96,7 @@ describe('fetchGitHubStatus', () => {
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
       if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse(localOllamaHealthRuns);
       return jsonResponse(repository);
     });
     vi.stubGlobal('fetch', mockFetch);
@@ -110,8 +126,14 @@ describe('fetchGitHubStatus', () => {
       status: 'completed',
       conclusion: 'success',
     });
+    expect(result.localOllamaHealthRun).toMatchObject({
+      id: 200,
+      name: 'Local Ollama runner health',
+      status: 'completed',
+      conclusion: 'success',
+    });
     expect(result.fetchedAt).toMatch(/^\d{4}-\d\d-\d\dT/);
-    expect(mockFetch).toHaveBeenCalledTimes(4);
+    expect(mockFetch).toHaveBeenCalledTimes(5);
     for (const [input, init] of mockFetch.mock.calls) {
       expect(String(input)).toMatch(/^https:\/\/api\.github\.com\//);
       expect(init?.method).toBe('GET');
@@ -129,6 +151,7 @@ describe('fetchGitHubStatus', () => {
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
       if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse([malformedLabelsIssue]);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse(localOllamaHealthRuns);
       return jsonResponse(repository);
     }));
 
@@ -138,12 +161,32 @@ describe('fetchGitHubStatus', () => {
     });
   });
 
+  it('keeps other panels usable when the local health workflow cannot be loaded', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
+      if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
+      if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse({ message: 'Forbidden' }, 403);
+      return jsonResponse(repository);
+    }));
+
+    await expect(fetchGitHubStatus()).resolves.toMatchObject({
+      openPullRequests: [{ number: 1 }],
+      openAgentTasks: [{ number: 42 }],
+      recentWorkflowRuns: [{ id: 100 }],
+      localOllamaHealthRun: null,
+      warnings: ['Local Ollama health-check status could not be loaded.'],
+    });
+  });
+
   it('preserves private visibility reported by the API', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse([]);
       if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse([]);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse({ workflow_runs: [] });
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse({ workflow_runs: [] });
       return jsonResponse({ ...repository, private: true, visibility: 'private' });
     }));
 
@@ -168,6 +211,7 @@ describe('fetchGitHubStatus', () => {
       }
       if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse(workflowRuns);
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse(localOllamaHealthRuns);
       return jsonResponse(repository);
     }));
 
@@ -185,6 +229,7 @@ describe('fetchGitHubStatus', () => {
       if (url.endsWith('/pulls?state=open&per_page=5')) return jsonResponse(pullRequests);
       if (url.endsWith('/issues?state=open&labels=agent-task&per_page=5')) return jsonResponse(agentIssues);
       if (url.endsWith('/actions/runs?per_page=3')) return jsonResponse({ message: 'Forbidden' }, 403);
+      if (url.endsWith('/actions/workflows/local-ollama-health.yml/runs?per_page=1')) return jsonResponse(localOllamaHealthRuns);
       return jsonResponse(repository);
     }));
 

@@ -54,12 +54,27 @@ const workflowRuns = {
   ],
 };
 
+const localOllamaHealthRuns = {
+  workflow_runs: [
+    {
+      id: 200,
+      name: 'Local Ollama runner health',
+      status: 'completed',
+      conclusion: 'success',
+      html_url: 'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/200',
+      head_branch: 'main',
+      updated_at: '2026-10-25T09:00:00Z',
+    },
+  ],
+};
+
 function installGitHubFetch(statusCode = 200) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (statusCode !== 200) return jsonResponse({ message: 'Not Found' }, statusCode);
     if (url.includes('/pulls?')) return jsonResponse(pullRequests);
     if (url.includes('/issues?')) return jsonResponse(agentIssues);
+    if (url.includes('/actions/workflows/local-ollama-health.yml/runs?')) return jsonResponse(localOllamaHealthRuns);
     if (url.includes('/actions/runs?')) return jsonResponse(workflowRuns);
     return jsonResponse(repository);
   }));
@@ -107,6 +122,24 @@ describe('dashboard GitHub status panel', () => {
       'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/pull/1',
     );
     expect(screen.queryByRole('region', { name: 'Task metrics' })).not.toBeInTheDocument();
+  });
+
+  it('shows the last recorded local Ollama health in Agent workspace', async () => {
+    installGitHubFetch();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agent workspace/ }));
+
+    expect(await screen.findByText('Last recorded health check passed')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open health workflow/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/workflows/local-ollama-health.yml',
+    );
+    expect(screen.getByRole('link', { name: /View last run/ })).toHaveAttribute(
+      'href',
+      'https://github.com/OpenPlayer-Team/AI-Development-Command-Center/actions/runs/200',
+    );
+    expect(screen.getByText(/historical result, not a guarantee that Ollama is online now/i)).toBeInTheDocument();
   });
 
   it('opens the durable task queue using live agent issues', async () => {

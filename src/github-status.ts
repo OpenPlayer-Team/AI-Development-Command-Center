@@ -5,6 +5,7 @@ const API_BASE = 'https://api.github.com';
 export const GITHUB_REPOSITORY_URL = `https://github.com/${OWNER}/${REPOSITORY}`;
 export const GITHUB_TASK_INTAKE_URL = `${GITHUB_REPOSITORY_URL}/actions/workflows/task-intake.yml`;
 export const GITHUB_ACTIONS_URL = `${GITHUB_REPOSITORY_URL}/actions`;
+export const GITHUB_OLLAMA_HEALTH_URL = `${GITHUB_REPOSITORY_URL}/actions/workflows/local-ollama-health.yml`;
 export const LOCAL_AGENT_RUNNER_DOC_URL = `${GITHUB_REPOSITORY_URL}/blob/main/docs/LOCAL-AGENT-RUNNER.md`;
 
 export interface RepositorySummary {
@@ -46,6 +47,7 @@ export interface GitHubLiveStatus {
   openPullRequests: PullRequestSummary[];
   openAgentTasks: AgentIssueSummary[];
   recentWorkflowRuns: WorkflowRunSummary[];
+  localOllamaHealthRun: WorkflowRunSummary | null;
   warnings: string[];
   fetchedAt: string;
 }
@@ -194,6 +196,10 @@ function parseWorkflowRuns(value: unknown): WorkflowRunSummary[] {
   });
 }
 
+function parseLatestWorkflowRun(value: unknown): WorkflowRunSummary | null {
+  return parseWorkflowRuns(value)[0] ?? null;
+}
+
 /**
  * Reads public repository metadata, open pull requests, and recent Actions runs.
  * It deliberately uses no credential and grants the browser no write capability.
@@ -229,11 +235,12 @@ export async function fetchGitHubStatus(signal?: AbortSignal): Promise<GitHubLiv
   const encodedRepository = encodeURIComponent(REPOSITORY);
   const base = `/repos/${encodedOwner}/${encodedRepository}`;
 
-  const [repositoryResult, pullRequestsResult, agentIssuesResult, workflowRunsResult] = await Promise.allSettled([
+  const [repositoryResult, pullRequestsResult, agentIssuesResult, workflowRunsResult, localOllamaHealthResult] = await Promise.allSettled([
     getJson(base, signal),
     getJson(`${base}/pulls?state=open&per_page=5`, signal),
     getJson(`${base}/issues?state=open&labels=agent-task&per_page=5`, signal),
     getJson(`${base}/actions/runs?per_page=3`, signal),
+    getJson(`${base}/actions/workflows/local-ollama-health.yml/runs?per_page=1`, signal),
   ]);
 
   if (signal?.aborted) {
@@ -264,12 +271,20 @@ export async function fetchGitHubStatus(signal?: AbortSignal): Promise<GitHubLiv
     [],
     warnings,
   );
+  const localOllamaHealthRun = parseOptionalResult(
+    localOllamaHealthResult,
+    'Local Ollama health-check status could not be loaded.',
+    parseLatestWorkflowRun,
+    null,
+    warnings,
+  );
 
   return {
     repository: parsedRepository,
     openPullRequests,
     openAgentTasks,
     recentWorkflowRuns,
+    localOllamaHealthRun,
     warnings,
     fetchedAt: new Date().toISOString(),
   };

@@ -259,3 +259,14 @@ h1 span{background:linear-gradient(90deg,#b4a0ff,#76dbe6);-webkit-background-cli
 .focus-setting strong{font-size:12px;line-height:1.5;color:#e4e6f2}
 .focus-setting small{font-size:10px;line-height:1.5;color:#7e889e}
 @media(max-width:700px){.focus-intro{padding:15px}.focus-intro-heading{flex-direction:column}.focus-refresh{align-self:flex-start}.focus-intro h2{font-size:21px}.focus-agent-grid,.focus-settings-grid{grid-template-columns:1fr}.focus-record{padding:12px}}
+
+
+/* Last recorded provider health: historical and read-only */
+.focus-health{padding:16px}
+.focus-health-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:13px 0 0}
+.focus-health-status strong{font-size:11px;line-height:1.5;color:#e1e5f0;font-weight:650}
+.focus-health-status>a{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:#b9a5ff;font-size:10px;text-decoration:none}
+.focus-health-status>a:hover{text-decoration:underline}
+.focus-health-copy{margin:10px 0 0;color:#8c96ad;font-size:10px;line-height:1.7;overflow-wrap:anywhere}
+.focus-health .panel-heading.compact{flex-direction:row;align-items:flex-start}
+@media(max-width:700px){.focus-health .panel-heading.compact{flex-direction:column}}

@@ -6,7 +6,7 @@ import {
   RefreshCw, Settings2, ShieldCheck, Sparkles, Terminal, Workflow, Zap,
 } from 'lucide-react';
 import { countTasksByStatus, createTask, type Task } from './task-utils';
-import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, LOCAL_AGENT_RUNNER_DOC_URL, type GitHubLiveStatus } from './github-status';
+import { fetchGitHubStatus, GITHUB_REPOSITORY_URL, GITHUB_TASK_INTAKE_URL, GITHUB_ACTIONS_URL, GITHUB_OLLAMA_HEALTH_URL, LOCAL_AGENT_RUNNER_DOC_URL, type GitHubLiveStatus } from './github-status';
 
 const initialTasks: Task[] = [
   { id: 'task-104', title: 'Audit repository structure and dependencies', project: 'Command Center', status: 'done', priority: 'high', agent: 'Repository Analyst', updated: '12 min ago' },
@@ -339,6 +339,31 @@ function FocusedWorkspaceView({
   const showRuns = activeNav === 'Workflows' || activeNav === 'Terminal logs' || activeNav === 'GitHub activity';
   const taskIntakeUrl = GITHUB_TASK_INTAKE_URL;
   const taskDocsUrl = LOCAL_AGENT_RUNNER_DOC_URL;
+  const healthRun = githubStatus?.localOllamaHealthRun ?? null;
+  const healthStatusUnavailable = githubStatus?.warnings.includes('Local Ollama health-check status could not be loaded.') ?? false;
+  const healthLabel = !githubStatus
+    ? githubStatusLoading ? 'Loading health status' : 'Health status unavailable'
+    : healthStatusUnavailable
+      ? 'Health status unavailable'
+      : !healthRun
+        ? 'No recorded health check'
+        : healthRun.status !== 'completed'
+          ? `Health check ${workflowRunLabel(healthRun.status, healthRun.conclusion)}`
+          : healthRun.conclusion === 'success'
+            ? 'Last recorded health check passed'
+            : `Last recorded check ${workflowRunLabel(healthRun.status, healthRun.conclusion)}`;
+  const healthDotClass = healthRun
+    ? `github-run-dot run-${healthRun.status !== 'completed' ? healthRun.status : healthRun.conclusion ?? 'completed'}`
+    : 'github-run-dot';
+  const healthDetail = !githubStatus
+    ? githubStatusLoading
+      ? 'Loading the public workflow status…'
+      : 'GitHub health-check status is unavailable. See the status notice above.'
+    : healthStatusUnavailable
+      ? 'GitHub could not load the latest health-check metadata. Refresh to try again.'
+      : healthRun
+        ? `Last updated ${formatTimestamp(healthRun.updatedAt)}. This is a historical result, not a guarantee that Ollama is online now.`
+        : 'No health-check run is recorded yet. Run the diagnostic from GitHub Actions after registering the dedicated local runner.';
 
   return (
     <section className="focus-workspace" aria-labelledby="focus-workspace-title">
@@ -423,6 +448,18 @@ function FocusedWorkspaceView({
               <AgentRow icon={<Code2 size={16} />} name="Developer" description="Proposes restricted source diffs" color="cyan" status="Not connected" />
               <AgentRow icon={<Check size={16} />} name="Test engineer" description="Runs tests/build in an isolated hosted workspace" color="green" status="Not connected" />
             </div>
+          </section>
+          <section className="panel focus-health" aria-label="Local Ollama provider health">
+            <div className="panel-heading compact">
+              <div><div className="section-title">Local Ollama provider</div><p>Last recorded runner health check</p></div>
+              <a className="subtle-button focus-action-link" href={GITHUB_OLLAMA_HEALTH_URL} target="_blank" rel="noreferrer">Open health workflow <ArrowUpRight size={13} /></a>
+            </div>
+            <div className="focus-health-status" role="status">
+              <span className={healthDotClass} />
+              <strong>{healthLabel}</strong>
+              {healthRun ? <a href={healthRun.htmlUrl} target="_blank" rel="noreferrer">View last run <ArrowUpRight size={12} /></a> : null}
+            </div>
+            <p className="focus-health-copy">{healthDetail}</p>
           </section>
           <section className="panel focus-note">
             <ShieldCheck size={18} />
