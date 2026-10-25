@@ -18,6 +18,7 @@ Security goals:
 | Asset | Why it matters |
 | --- | --- |
 | GitHub token used by Actions | Can read issues; the publishing workflow can create branches and pull requests. |
+| Third-party GitHub Actions code | Runs with its step's permissions and can affect source, artifacts, or credentials. |
 | Source code and repository history | Must not be overwritten or expanded beyond the approved patch scope. |
 | Self-hosted runner and local Ollama installation | A persistent runner can expose host files, local services, or credentials if misconfigured. |
 | Patch artifact | Untrusted model output that can contain incorrect or malicious source changes. |
@@ -73,7 +74,7 @@ Security goals:
 | Secret accidentally committed in a source file or echoed by the model | GitHub token is not passed to model-generation steps; selected issue/source text and planner output pass a best-effort redaction step. | Regexes miss unknown formats, encoded secrets, multiline credentials other than PEM keys, and arbitrary secret literals. Model output may transform or reconstruct sensitive data. Add a dedicated secret scanner; inspect redaction behavior before enabling broadly. |
 | Malicious generated diff | Reusable validator, disposable hosted candidate tests, no generated-code execution on self-hosted runner. | An allowed `src/*` change can still introduce unsafe application behavior. Review every line. |
 | Compromised or persistent self-hosted runner | Dedicated disposable Linux runner is required and documented. | Workflow checks alone cannot isolate the host. Use ephemeral provisioning, restricted egress, no other credentials, and routine rebuilds. |
-| Artifact substitution or wrong run | Publisher restricts triggering workflow, event, branch, repository, issue identity, and patch shape. | GitHub Actions/artifact supply-chain risk remains; pin third-party actions to reviewed full commit SHAs for stronger hardening. |
+| Artifact substitution or wrong run | Publisher restricts triggering workflow, event, branch, repository, issue identity, and patch shape. | GitHub Actions/artifact supply-chain risk remains even with full-SHA pins; review action code and update pins deliberately. |
 | Overprivileged publication token | Separate publisher workflow; scoped repository permissions; no merge permission is requested. | The publisher can write repository contents and open PRs while running. Review workflow changes and enforce repository rulesets. |
 | False confidence from green CI | Workflow summaries document bounds and require human review; no automatic merge. | A green result is not a security verdict. Review diff, tests, dependencies, and workflow source. |
 | Dependency supply-chain compromise | Lockfile committed; CI/Pages use `npm ci`; generated-patch tests use `npm ci --ignore-scripts`; CI blocks high/critical npm audit findings and reports lower-severity findings. | A lockfile constrains resolved versions but does not remove upstream package or action supply-chain risk; review all audit output and action versions. |

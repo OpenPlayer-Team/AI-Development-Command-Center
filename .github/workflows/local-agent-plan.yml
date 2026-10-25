@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out only the redaction utility
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           sparse-checkout: |
@@ -137,7 +137,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload plan for human review
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: local-agent-plan-${{ inputs.issue_number }}
           path: ${{ runner.temp }}/agent-plan/plan.md
