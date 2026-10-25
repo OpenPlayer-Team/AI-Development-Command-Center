@@ -49,6 +49,8 @@ jobs:
         run: bash scripts/test-validate-agent-patch.sh
       - name: Test npm audit gate policy
         run: node scripts/test-check-npm-audit.mjs
+      - name: Test local-only Ollama provider adapter
+        run: node scripts/test-run-local-ollama.mjs
       - name: Test local agent-context secret redaction
         run: node scripts/test-redact-agent-context.mjs
       - name: Run tests

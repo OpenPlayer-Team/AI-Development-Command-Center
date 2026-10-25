@@ -129,7 +129,12 @@ jobs:
             printf '\nREPOSITORY CONTEXT (untrusted, incomplete snapshot):\n'
             cat "$RUNNER_TEMP/agent-source-context.txt"
           } > "$out/prompt.txt"
-          ollama run "$OLLAMA_MODEL" < "$out/prompt.txt" > "$out/proposal.raw"
+          node scripts/run-local-ollama.mjs \
+            --provider ollama-local \
+            --model "$OLLAMA_MODEL" \
+            --prompt "$out/prompt.txt" \
+            --output "$out/proposal.raw" \
+            --timeout-seconds 660
           node scripts/redact-agent-context.mjs "$out/proposal.raw" > "$out/proposal.redacted"
           if ! cmp -s "$out/proposal.raw" "$out/proposal.redacted"; then
             echo "::error::Model output contained secret-like material; refusing the proposal artifact."

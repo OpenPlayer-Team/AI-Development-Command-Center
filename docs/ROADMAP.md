@@ -41,7 +41,8 @@
 - [ ] Require explicit human review and approval before merging any agent PR
 
 ## Phase 4 — Provider routing and local fallback
-- [ ] Implement provider interface and health checks
+- [x] Implement a local-only Ollama provider adapter with model validation, prompt/output bounds, timeout, and no cloud fallback
+- [ ] Implement provider-unavailable queue behavior and explicit retry policy
 - [ ] Add provider-unavailable queue behavior and retry limits
 - [ ] Enforce €0 budget with no paid fallback
 - [ ] Do not route to cloud APIs unless explicitly configured and budget-approved
